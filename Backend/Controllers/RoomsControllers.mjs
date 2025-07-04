@@ -71,6 +71,21 @@ let addRoom=async(req,res)=>{
             }
             }
             
+             // Update a room
+             let updateRoom=async(req,res)=>{
+                try {
+                    let id=req.params.id;
+                    let updateRoom=await Rooms.findByIdAndUpdate(id,req.body,{new:true});
+                    if(!updateRoom){
+                        res.status(404).json({message:"Room not found"});
+                    }else{
+                        res.status(200).json({message:"Room updated successfully",room:updateRoom});
+                    }
+                } catch (error) {
+                    console.log(error);
+                    res.status(500).json({message:"Internal server error"});
+                }
+            }
               // Delete a room
               let deleteRoom=async(req,res)=>{
                 try {
@@ -88,5 +103,5 @@ let addRoom=async(req,res)=>{
                 }
             }
 
-    const RoomsController = {addRoom,getAllRooms,getRoom,deleteRoom};
+    const RoomsController = {addRoom,getAllRooms,getRoom,deleteRoom,updateRoom};
     export default RoomsController;

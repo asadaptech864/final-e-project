@@ -9,6 +9,7 @@ router
 .get("/:id", RoomsController.getRoom)
 .post("/addroom", RoomsController.addRoom)
 .delete("/delete/:id", RoomsController.deleteRoom)
+.put("/update/:id", RoomsController.updateRoom)
 
 
 
