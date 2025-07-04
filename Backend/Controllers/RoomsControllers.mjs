@@ -1,0 +1,92 @@
+import Rooms from '../Modals/RoomsModal.mjs'
+
+// Get all rooms
+let getAllRooms=async(req,res)=>{
+    try {
+    let rooms = await Rooms.find();
+    if (rooms.length == 0) {
+           res.status(404).json({message:"No rooms found"});
+    } else {
+    
+        res.status(200).json({
+        message:"Our Rooms",
+        rooms:rooms,
+    })
+    } 
+    } catch (error) {
+       console.log(error) ;
+       res.status(500).json({message:"Internal server errror"});
+    }
+    }   
+
+  // Get a single room by ID
+  let getRoom=async(req,res)=>{
+    try {
+    
+        let id= req.params.id;
+    let room = await Rooms.find({_id:id});
+    if (room.length === 0) {
+        res.status(404).json({message: "No room found"});
+    } else {
+        res.status(200).json({
+        message:"room found",
+        room:room,
+    })
+    } 
+    } catch (error) {
+       console.log(error) ;
+       res.status(500).json({message:"Internal server errror"});
+    }
+    }
+
+// Add a new room
+let addRoom=async(req,res)=>{
+            try {
+            let newRoom = new Rooms({
+                 roomType:req.body.roomType,
+                 description:req.body.description,
+                 image:req.body.image,
+                 capacity:req.body.capacity,
+                 bedType:req.body.bedType,
+                 roomSize:req.body.roomSize,
+                 availability:req.body.availability,
+                 status:req.body.status,
+                 pricing:req.body.pricing,
+                 
+            
+            });
+            let addroom = await Rooms.insertOne(newRoom);
+            if (!addroom) {
+                   res.status(404).json({message:"Failed to add room"});
+            } else {
+            
+                res.status(200).json({
+                message:"Room added successfully",
+                room:addroom,
+            })
+            } 
+            } catch (error) {
+               console.log(error) ;
+               res.status(500).json({message:"Internal server errror"});
+            }
+            }
+            
+              // Delete a room
+              let deleteRoom=async(req,res)=>{
+                try {
+                    let id=req.params.id;
+                    let deleteRoom=await Rooms.findByIdAndDelete(id);
+                    if(!deleteRoom){
+                        res.status(404).json({message:"Room not found"});
+                    }else{
+                        res.status(200).json({message:"Room deleted successfully"});
+                    }
+                    
+                } catch (error) {
+                    console.log(error);
+                    res.status(500).json({message:"Internal server error"});
+                }
+            }
+
+    const RoomsController = {addRoom,getAllRooms,getRoom,deleteRoom};
+    export default RoomsController;

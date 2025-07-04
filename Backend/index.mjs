@@ -2,11 +2,13 @@ import express from 'express'
 import mongoose from 'mongoose'
 import dotenv from 'dotenv'
 import router from './Routes/routes.mjs'
+import cookieParser from 'cookie-parser'
 import cors from 'cors'
 const app = express()
 dotenv.config()
 app.use(express.json())
 app.use(cors())
+app.use(cookieParser())
 main().catch(err => console.log(err));
 const port = process.env.PORT
 
