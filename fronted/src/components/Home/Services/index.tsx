@@ -28,17 +28,17 @@ const Categories = () => {
           <div className="lg:col-span-6 col-span-12">
             <p className="text-dark/75 dark:text-white/75 text-base font-semibold flex gap-2.5">
               <Icon icon="ph:house-simple-fill" className="text-2xl text-primary " />
-              Categories
+              Hotel Amenities
             </p>
             <h2 className="lg:text-52 text-40 mt-4 mb-2 lg:max-w-full font-medium leading-[1.2] text-dark dark:text-white">
-              Explore best properties
-              with expert services.
+              Experience luxury hospitality
+              with world-class services.
             </h2>
             <p className="text-dark/50 dark:text-white/50 text-lg lg:max-w-full leading-[1.3] md:max-w-3/4">
-              Discover a diverse range of premium properties, from luxurious apartments  to spacious villas, tailored to your needs
+              Discover our premium hotel amenities, from elegant suites to fine dining, spa treatments, and exceptional service
             </p>
             <Link href="/properties" className="py-4 px-8 bg-primary text-base leading-4 block w-fit text-white rounded-full font-semibold mt-8 hover:bg-dark duration-300">
-              View properties
+              View amenities
             </Link>
           </div>
           <div className="lg:col-span-6 col-span-12">
@@ -61,10 +61,10 @@ const Categories = () => {
                 </div>
                 <div className="flex flex-col gap-2.5">
                   <h3 className="text-white text-2xl">
-                    Residential Homes
+                    Luxury Suites
                   </h3>
                   <p className="text-white/80 text-base leading-6">
-                    Experience elegance and comfort with our exclusive luxury villas, designed  for sophisticated living.
+                    Experience ultimate comfort and elegance in our spacious luxury suites with premium amenities and stunning views.
                   </p>
                 </div>
               </Link>
@@ -90,10 +90,10 @@ const Categories = () => {
                 </div>
                 <div className="flex flex-col gap-2.5">
                   <h3 className="text-white text-2xl">
-                    Luxury villas
+                    Spa & Wellness
                   </h3>
                   <p className="text-white/80 text-base leading-6">
-                    Experience elegance and comfort with our exclusive luxury villas, designed for sophisticated living.
+                    Rejuvenate your body and mind with our world-class spa treatments and wellness facilities.
                   </p>
                 </div>
               </Link>
@@ -119,10 +119,10 @@ const Categories = () => {
                 </div>
                 <div className="flex flex-col gap-2.5">
                   <h3 className="text-white text-2xl">
-                    Appartment
+                    Fine Dining
                   </h3>
                   <p className="text-white/80 text-base leading-6">
-                    Experience elegance and comfort with our exclusive luxury villas, designed  for sophisticated living.
+                    Savor exquisite cuisine prepared by award-winning chefs in our elegant restaurants and bars.
                   </p>
                 </div>
               </Link>
@@ -148,10 +148,10 @@ const Categories = () => {
                 </div>
                 <div className="flex flex-col gap-2.5">
                   <h3 className="text-white text-2xl">
-                    Office Spaces
+                    Conference Rooms
                   </h3>
                   <p className="text-white/80 text-base leading-6">
-                    Experience elegance and comfort with our exclusive luxury villas, designed  for sophisticated living.
+                    Host successful events and meetings in our state-of-the-art conference facilities and business center.
                   </p>
                 </div>
               </Link>

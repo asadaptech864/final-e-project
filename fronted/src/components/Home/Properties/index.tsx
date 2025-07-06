@@ -17,14 +17,14 @@ const Properties: React.FC = () => {
               />
             </span>
             <p className='text-base font-semibold text-dark/75 dark:text-white/75'>
-              Properties
+              Hotel Rooms
             </p>
           </div>
           <h2 className='text-40 lg:text-52 font-medium text-black dark:text-white text-center tracking-tight leading-11 mb-2'>
-            Discover inspiring designed homes.
+            Discover our elegant accommodations.
           </h2>
           <p className='text-xm font-normal text-black/50 dark:text-white/50 text-center'>
-            Curated homes where elegance, style, and comfort unite.
+            Luxurious rooms and suites designed for your comfort and relaxation.
           </p>
         </div>
         <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10'>

@@ -74,22 +74,21 @@ const FeaturedProperty: React.FC = () => {
             <div>
               <p className="text-dark/75 dark:text-white/75 text-base font-semibold flex gap-2">
                 <Icon icon="ph:house-simple-fill" className="text-2xl text-primary " />
-                Featured property
+                Featured suite
               </p>
               <h2 className="lg:text-52 text-40 font-medium text-dark dark:text-white">
-                Modern luxe villa
+                Presidential Suite
               </h2>
               <div className="flex items-center gap-2.5">
                 <Icon icon="ph:map-pin" width={28} height={26} className="text-dark/50 dark:text-white/50" />
                 <p className="text-dark/50 dark:text-white/50 text-base">
-                  20 S Aurora Ave, Miami
+                  Floor 25, Ocean View
                 </p>
               </div>
             </div>
             <p className="text-base text-dark/50 dark:text-white/50">
-              Experience luxury living at modern luxe villa, located at 20 S Aurora Ave, Miami. Priced at $1,650,500, this 560 ft² smart home offers 4 bedrooms,
-              3 bathrooms, and spacious living areas. Enjoy energy efficiency, natural light, security systems, outdoor spaces, and 2 bar areas—perfect for 8+
-              guests. Built in 2025.
+              Experience unparalleled luxury in our Presidential Suite, located on the 25th floor with breathtaking ocean views. Priced at $1,200 per night, this 2,500 ft² suite offers 2 master bedrooms,
+              3 bathrooms, a private terrace, butler service, and exclusive access to our VIP amenities. Perfect for discerning travelers seeking the ultimate hotel experience.
             </p>
             <div className="grid grid-cols-2 gap-10">
               <div className="flex items-center gap-4">
@@ -111,7 +110,7 @@ const FeaturedProperty: React.FC = () => {
                     unoptimized={true}
                   />
                 </div>
-                <h6 className="">4 Bedrooms</h6>
+                <h6 className="">2 Bedrooms</h6>
               </div>
               <div className="flex items-center gap-4">
                 <div className="bg-dark/5 dark:bg-white/5 p-2.5 rounded-[6px]">
@@ -153,7 +152,7 @@ const FeaturedProperty: React.FC = () => {
                     unoptimized={true}
                   />
                 </div>
-                <h6 className="">Parking Space</h6>
+                <h6 className="">Butler Service</h6>
               </div>
               <div className="flex items-center gap-4">
                 <div className="bg-dark/5 dark:bg-white/5 p-2.5 rounded-[6px]">
@@ -174,19 +173,19 @@ const FeaturedProperty: React.FC = () => {
                     unoptimized={true}
                   />
                 </div>
-                <h6 className="">2 Bar areas</h6>
+                <h6 className="">Private Terrace</h6>
               </div>
             </div>
             <div className="flex gap-10">
               <Link href="/contactus" className="py-4 px-8 bg-primary hover:bg-dark duration-300 rounded-full text-white">
-                Get in touch
+                Book Now
               </Link>
               <div>
                 <h4 className="text-3xl text-dark dark:text-white font-medium">
-                  $1,650,500
+                  $1,200
                 </h4>
                 <p className="text-base text-dark/50">
-                  Discounted price
+                  Per night
                 </p>
               </div>
             </div>
