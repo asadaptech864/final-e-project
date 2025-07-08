@@ -12,6 +12,7 @@ router
 .delete("/delete/:id", RoomsController.deleteRoom)
 .put("/update/:id", RoomsController.updateRoom)
 .post("/addroomtype", upload.single('image'), RoomTypeController.addRoomTypewithimage)
+.get("/roomtypes/limited", RoomTypeController.getFourRoomTypes)
 
 
 export default router;

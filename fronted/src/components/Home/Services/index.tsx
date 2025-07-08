@@ -1,8 +1,24 @@
+"use client";
 import Image from "next/image";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 const Categories = () => {
+  type RoomType = {
+    name?: string;
+    image?: string;
+    description?: string;
+  };
+  const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
+
+  useEffect(() => {
+    // Update the URL below to match your backend endpoint
+    fetch("http://localhost:3001/roomtypes/limited")
+      .then((res) => res.json())
+      .then((data) => setRoomTypes(data.roomtype || []));
+  }, []);
+
   return (
     <section className="relative overflow-hidden">
       <div className="absolute left-0 top-0">
@@ -41,122 +57,52 @@ const Categories = () => {
               View amenities
             </Link>
           </div>
-          <div className="lg:col-span-6 col-span-12">
-            <div className="relative rounded-2xl overflow-hidden group">
-              <Link href="/residential-homes">
-                <Image
-                  src="/images/categories/villas.jpg"
-                  alt="villas"
-                  width={680}
-                  height={386}
-                  className="w-full"
-                  unoptimized={true}
-                />
-              </Link>
-              <Link href="/residential-homes" className="absolute w-full h-full bg-gradient-to-b from-black/0 to-black/80 top-full flex flex-col justify-between pl-10 pb-10 group-hover:top-0 duration-500">
-                <div className="flex justify-end mt-6 mr-6">
-                  <div className="bg-white text-dark rounded-full w-fit p-4">
-                    <Icon icon="ph:arrow-right" width={24} height={24} />
-                  </div>
+          {roomTypes.map((room, idx) => {
+            // Determine grid and image size based on index
+            let gridClass = "lg:col-span-3 col-span-6";
+            let imgWidth = 320;
+            let imgHeight = 412;
+            if (idx === 0) {
+              gridClass = "lg:col-span-6 col-span-12";
+              imgWidth = 680;
+              imgHeight = 386;
+            } else if (idx === 1) {
+              gridClass = "lg:col-span-6 col-span-12";
+              imgWidth = 680;
+              imgHeight = 386;
+            } else if (idx === 2 || idx === 3) {
+              gridClass = "lg:col-span-3 col-span-6";
+              imgWidth = 320;
+              imgHeight = 412;
+            }
+            return (
+              <div key={idx} className={gridClass}>
+                <div className="relative rounded-2xl overflow-hidden group">
+                  <Link href={`/${room.name?.toLowerCase().replace(/\s/g, "-") || "#"}`}>
+                    <Image
+                      src={room.image || "/images/categories/villas.jpg"}
+                      alt={room.name || "room"}
+                      width={imgWidth}
+                      height={imgHeight}
+                      className="w-full"
+                      unoptimized={true}
+                    />
+                  </Link>
+                  <Link href={`/${room.name?.toLowerCase().replace(/\s/g, "-") || "#"}`} className="absolute w-full h-full bg-gradient-to-b from-black/0 to-black/80 top-full flex flex-col justify-between pl-10 pb-10 group-hover:top-0 duration-500">
+                    <div className="flex justify-end mt-6 mr-6">
+                      <div className="bg-white text-dark rounded-full w-fit p-4">
+                        <Icon icon="ph:arrow-right" width={24} height={24} />
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2.5">
+                      <h3 className="text-white text-2xl">{room.name || "Room Type"}</h3>
+                      <p className="text-white/80 text-base leading-6">{room.description || "No description available."}</p>
+                    </div>
+                  </Link>
                 </div>
-                <div className="flex flex-col gap-2.5">
-                  <h3 className="text-white text-2xl">
-                    Luxury Suites
-                  </h3>
-                  <p className="text-white/80 text-base leading-6">
-                    Experience ultimate comfort and elegance in our spacious luxury suites with premium amenities and stunning views.
-                  </p>
-                </div>
-              </Link>
-            </div>
-          </div>
-          <div className="lg:col-span-6 col-span-12">
-            <div className="relative rounded-2xl overflow-hidden group">
-              <Link href="/luxury-villa">
-                <Image
-                  src="/images/categories/luxury-villa.jpg"
-                  alt="villas"
-                  width={680}
-                  height={386}
-                  className="w-full"
-                  unoptimized={true}
-                />
-              </Link>
-              <Link href="/luxury-villa" className="absolute w-full h-full bg-gradient-to-b from-black/0 to-black/80 top-full flex flex-col justify-between pl-10 pb-10 group-hover:top-0 duration-500">
-                <div className="flex justify-end mt-6 mr-6">
-                  <div className="bg-white text-dark rounded-full w-fit p-4">
-                    <Icon icon="ph:arrow-right" width={24} height={24} />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2.5">
-                  <h3 className="text-white text-2xl">
-                    Spa & Wellness
-                  </h3>
-                  <p className="text-white/80 text-base leading-6">
-                    Rejuvenate your body and mind with our world-class spa treatments and wellness facilities.
-                  </p>
-                </div>
-              </Link>
-            </div>
-          </div>
-          <div className="lg:col-span-3 col-span-6">
-            <div className="relative rounded-2xl overflow-hidden group">
-              <Link href="/appartment">
-                <Image
-                  src="/images/categories/appartment.jpg"
-                  alt="villas"
-                  width={320}
-                  height={386}
-                  className="w-full"
-                  unoptimized={true}
-                />
-              </Link>
-              <Link href="/appartment" className="absolute w-full h-full bg-gradient-to-b from-black/0 to-black/80 top-full flex flex-col justify-between pl-10 pb-10 group-hover:top-0 duration-500">
-                <div className="flex justify-end mt-6 mr-6">
-                  <div className="bg-white text-dark rounded-full w-fit p-4">
-                    <Icon icon="ph:arrow-right" width={24} height={24} />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2.5">
-                  <h3 className="text-white text-2xl">
-                    Fine Dining
-                  </h3>
-                  <p className="text-white/80 text-base leading-6">
-                    Savor exquisite cuisine prepared by award-winning chefs in our elegant restaurants and bars.
-                  </p>
-                </div>
-              </Link>
-            </div>
-          </div>
-          <div className="lg:col-span-3 col-span-6">
-            <div className="relative rounded-2xl overflow-hidden group">
-              <Link href="/office-spaces">
-                <Image
-                  src="/images/categories/office.jpg"
-                  alt="office"
-                  width={320}
-                  height={386}
-                  className="w-full"
-                  unoptimized={true}
-                />
-              </Link>
-              <Link href="/office-spaces" className="absolute w-full h-full bg-gradient-to-b from-black/0 to-black/80 top-full flex flex-col justify-between pl-10 pb-10 group-hover:top-0 duration-500">
-                <div className="flex justify-end mt-6 mr-6">
-                  <div className="bg-white text-dark rounded-full w-fit p-4">
-                    <Icon icon="ph:arrow-right" width={24} height={24} />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2.5">
-                  <h3 className="text-white text-2xl">
-                    Conference Rooms
-                  </h3>
-                  <p className="text-white/80 text-base leading-6">
-                    Host successful events and meetings in our state-of-the-art conference facilities and business center.
-                  </p>
-                </div>
-              </Link>
-            </div>
-          </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

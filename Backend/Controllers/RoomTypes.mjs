@@ -46,5 +46,23 @@ let getAllRoomType=async(req,res)=>{
             }
             }
 
-    const RoomTypeController = {getAllRoomType,addRoomTypewithimage};
-    export default RoomTypeController;
+// Get only 4 room types
+let getFourRoomTypes = async (req, res) => {
+  try {
+    let roomtype = await RoomsTypes.find().limit(4);
+    if (roomtype.length == 0) {
+      res.status(404).json({ message: "No rooms found" });
+    } else {
+      res.status(200).json({
+        message: "Our Rooms",
+        roomtype: roomtype,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const RoomTypeController = {getAllRoomType,addRoomTypewithimage, getFourRoomTypes};
+export default RoomTypeController;
