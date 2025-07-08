@@ -1,6 +1,7 @@
 import express from 'express'; 
 import RoomsController from '../Controllers/RoomsControllers.mjs';
-
+import RoomTypeController from '../Controllers/RoomTypes.mjs';
+import { upload } from '../cloudinaryconfig.mjs';
 const router = express.Router();
 
 
@@ -10,7 +11,7 @@ router
 .post("/addroom", RoomsController.addRoom)
 .delete("/delete/:id", RoomsController.deleteRoom)
 .put("/update/:id", RoomsController.updateRoom)
-
+.post("/addroomtype", upload.single('image'), RoomTypeController.addRoomTypewithimage)
 
 
 export default router;

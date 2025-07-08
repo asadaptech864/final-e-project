@@ -10,16 +10,10 @@ const roomTypesSchema = new Schema({
     description: { 
         type: String
      },
-    capacity: {
-        type: Number,
-        min: 1 
-        },
-    basePrice: { 
-        type: Number,
-        required: true 
-    },
-    amenities: [{ type: String }],
-    images: [{ type: String }],     
+    image: {
+         type: String,
+         required: true
+         },     
 });
 
 const RoomTypes = mongoose.model("roomTypes", roomTypesSchema);

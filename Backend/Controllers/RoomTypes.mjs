@@ -19,25 +19,32 @@ let getAllRoomType=async(req,res)=>{
     }
     }   
 
-  // Get a single room by ID
-  let getRoomType=async(req,res)=>{
-    try {
-    
-        let id= req.params.id;
-    let roomtype = await Rooms.find({_id:id});
-    if (room.length === 0) {
-        res.status(404).json({message: "No room found"});
-    } else {
-        res.status(200).json({
-        message:"room found",
-        roomtype:roomtype,
-    })
-    } 
-    } catch (error) {
-       console.log(error) ;
-       res.status(500).json({message:"Internal server errror"});
-    }
-    }
+          // Add a new room type with image
+          let addRoomTypewithimage=async(req,res)=>{
+            try {
+                console.log(req.file.path);
+                let newRoomType = new RoomsTypes({
+                 name:req.body.name,
+                 description:req.body.description,
+                 image:req.file.path,
+                 
+            
+            });
+            let addroomtype = await RoomsTypes.insertOne(newRoomType);
+            if (!addroomtype) {
+                   res.status(404).json({message:"Failed to add room type"});
+            } else {
+            
+                res.status(200).json({
+                message:"Room type added successfully",
+                roomtype:addroomtype,
+            })
+            } 
+            } catch (error) {
+               console.log(error) ;
+               res.status(500).json({message:"Internal server errror"});
+            }
+            }
 
-    const RoomTypeController = {getAllRoomType, getRoomType};
+    const RoomTypeController = {getAllRoomType,addRoomTypewithimage};
     export default RoomTypeController;
