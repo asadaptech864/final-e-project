@@ -8,7 +8,7 @@ const router = express.Router();
 router
 .get("/", RoomsController.getAllRooms)
 .get("/:id", RoomsController.getRoom)
-.post("/addroom", RoomsController.addRoom)
+.post("/addroom",upload.array('images', 5), RoomsController.addRoom)
 .delete("/delete/:id", RoomsController.deleteRoom)
 .put("/update/:id", RoomsController.updateRoom)
 .post("/addroomtype", upload.single('image'), RoomTypeController.addRoomTypewithimage)

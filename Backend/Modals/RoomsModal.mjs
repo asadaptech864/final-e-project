@@ -2,29 +2,25 @@ import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 const roomSchema = new Schema({
-  roomType: {
+  name: {
     type: String,
-    required: [true, "Room type is required"],
+    required: [true, "Room Name is required"],
   },
-  description: {
+  rate: {
     type: String,
-    required: [true, "Description is required"],
+    required: [true, "rate is required"],
   },
-  image: {
-    type: String,
-    required: [true, "Image is required"],
-  },
-  capacity: {
+  beds: {
     type: Number,
-    required: [true, "Capacity is required"],
+    required: [true, "Beds is required"],
   },
-  bedType: {
-    type: String,
-    required: [true, "Bed type is required"],
+  baths: {
+    type: Number,
+    required: [true, "Baths is required"],
   },
-  roomSize: {
-    type: String,
-    required: [true, "Room size is required"],
+  area: {
+    type: Number,
+    required: [true, "area is required"],
   },
   availability: {
     type: String,
@@ -34,10 +30,13 @@ const roomSchema = new Schema({
     type: String,
     default: "Clean",
   },
-  pricing: {
+  capacity: {
     type: Number,
-    required: [true, "Pricing is required"],
-    min: [0, "Pricing must be non-negative"],
+    required: [true, "Capacity is required"],
+  },
+  images: {
+    type: [String], 
+    required: [true, "Image is required"],
   },
   createdAt: {
     type: Date,

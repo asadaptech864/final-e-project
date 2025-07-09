@@ -64,5 +64,7 @@ let getFourRoomTypes = async (req, res) => {
   }
 };
 
+
+
 const RoomTypeController = {getAllRoomType,addRoomTypewithimage, getFourRoomTypes};
 export default RoomTypeController;

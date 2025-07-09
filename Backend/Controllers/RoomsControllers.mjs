@@ -41,17 +41,18 @@ let getAllRooms=async(req,res)=>{
 
 // Add a new room
 let addRoom=async(req,res)=>{
+    const imagePaths = req.files.map(file => file.path);
             try {
             let newRoom = new Rooms({
-                 roomType:req.body.roomType,
-                 description:req.body.description,
-                 image:req.body.image,
-                 capacity:req.body.capacity,
-                 bedType:req.body.bedType,
-                 roomSize:req.body.roomSize,
+                 name:req.body.name,
+                 rate:req.body.rate,
+                 beds:req.body.beds,
+                 baths:req.body.baths,
+                 area:req.body.area,
                  availability:req.body.availability,
                  status:req.body.status,
-                 pricing:req.body.pricing,
+                 capacity:req.body.capacity,
+                 images: imagePaths, // Store array of image URLs
                  
             
             });
