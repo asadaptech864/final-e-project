@@ -6,6 +6,9 @@ const roomSchema = new Schema({
     type: String,
     required: [true, "Room Name is required"],
   },
+  description: {
+    type: String,
+  },
   rate: {
     type: String,
     required: [true, "rate is required"],
@@ -33,6 +36,10 @@ const roomSchema = new Schema({
   capacity: {
     type: Number,
     required: [true, "Capacity is required"],
+  },
+  roomType: {
+    type: String,
+    required: [true, "Room Type is required"],
   },
   images: {
     type: [String], 

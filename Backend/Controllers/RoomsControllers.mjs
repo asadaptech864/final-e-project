@@ -45,6 +45,8 @@ let addRoom=async(req,res)=>{
             try {
             let newRoom = new Rooms({
                  name:req.body.name,
+                 description:req.body.description,
+                 roomType:req.body.roomType,
                  rate:req.body.rate,
                  beds:req.body.beds,
                  baths:req.body.baths,
