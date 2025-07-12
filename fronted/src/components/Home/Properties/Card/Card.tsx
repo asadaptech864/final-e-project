@@ -6,7 +6,7 @@ import Link from 'next/link'
 const PropertyCard: React.FC<{ item: PropertyHomes }> = ({ item }) => {
   const { name, location, rate, beds, baths, area, slug, images } = item
 
-  const mainImage = images[1]?.src;
+  const mainImage = images[0]?.src;
 
   return (
     <div>
