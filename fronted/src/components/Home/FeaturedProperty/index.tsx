@@ -2,7 +2,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { featuredProprty } from "@/app/api/featuredproperty";
+import { useFeaturedRoom } from "@/hooks/useFeaturedRoom";
 import { Icon } from "@iconify/react";
 import {
   Carousel,
@@ -12,9 +12,11 @@ import {
 } from "@/components/ui/carousel";
 
 const FeaturedProperty: React.FC = () => {
+  const { featuredRoom, loading, error } = useFeaturedRoom();
   const [api, setApi] = React.useState<CarouselApi | undefined>(undefined);
   const [current, setCurrent] = React.useState(0);
   const [count, setCount] = React.useState(0);
+  
   React.useEffect(() => {
     if (!api) {
       return;
@@ -33,6 +35,30 @@ const FeaturedProperty: React.FC = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <section>
+        <div className="container max-w-8xl mx-auto px-5 2xl:px-0">
+          <div className="text-center py-20">
+            <p className="text-lg">Loading featured room...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error || !featuredRoom) {
+    return (
+      <section>
+        <div className="container max-w-8xl mx-auto px-5 2xl:px-0">
+          <div className="text-center py-20">
+            <p className="text-lg text-red-500">Error: {error || 'No featured room found'}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
 
   return (
     <section>
@@ -46,11 +72,11 @@ const FeaturedProperty: React.FC = () => {
               }}
             >
               <CarouselContent>
-                {featuredProprty.map((item, index) => (
+                {featuredRoom.images.map((image, index) => (
                   <CarouselItem key={index}>
                     <Image
-                      src={item.scr}
-                      alt={item.alt}
+                      src={image}
+                      alt={`${featuredRoom.name} - Image ${index + 1}`}
                       width={680}
                       height={530}
                       className="rounded-2xl w-full h-540"
@@ -74,10 +100,10 @@ const FeaturedProperty: React.FC = () => {
             <div>
               <p className="text-dark/75 dark:text-white/75 text-base font-semibold flex gap-2">
                 <Icon icon="ph:house-simple-fill" className="text-2xl text-primary " />
-                Featured suite
+                Featured {featuredRoom.roomType}
               </p>
               <h2 className="lg:text-52 text-40 font-medium text-dark dark:text-white">
-                Presidential Suite
+                {featuredRoom.name}
               </h2>
               <div className="flex items-center gap-2.5">
                 <Icon icon="ph:map-pin" width={28} height={26} className="text-dark/50 dark:text-white/50" />
@@ -110,7 +136,7 @@ const FeaturedProperty: React.FC = () => {
                     unoptimized={true}
                   />
                 </div>
-                <h6 className="">2 Bedrooms</h6>
+                <h6 className="">{featuredRoom.beds} Bedrooms</h6>
               </div>
               <div className="flex items-center gap-4">
                 <div className="bg-dark/5 dark:bg-white/5 p-2.5 rounded-[6px]">
@@ -131,7 +157,7 @@ const FeaturedProperty: React.FC = () => {
                     unoptimized={true}
                   />
                 </div>
-                <h6 className="">3 Bathrooms</h6>
+                <h6 className="">{featuredRoom.baths} Bathrooms</h6>
               </div>
               <div className="flex items-center gap-4">
                 <div className="bg-dark/5 dark:bg-white/5 p-2.5 rounded-[6px]">
@@ -182,7 +208,7 @@ const FeaturedProperty: React.FC = () => {
               </Link>
               <div>
                 <h4 className="text-3xl text-dark dark:text-white font-medium">
-                  $1,200
+                  ${featuredRoom.rate}
                 </h4>
                 <p className="text-base text-dark/50">
                   Per night

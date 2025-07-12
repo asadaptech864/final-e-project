@@ -17,6 +17,25 @@ let getAllRooms=async(req,res)=>{
        console.log(error) ;
        res.status(500).json({message:"Internal server errror"});
     }
+    }
+
+// Get featured room (first room or specific room)
+let getFeaturedRoom=async(req,res)=>{
+    try {
+    let featuredRoom = await Rooms.findOne().sort({createdAt: -1}); // Get latest room
+    if (!featuredRoom) {
+           res.status(404).json({message:"No featured room found"});
+    } else {
+    
+        res.status(200).json({
+        message:"Featured Room",
+        room:featuredRoom,
+    })
+    } 
+    } catch (error) {
+       console.log(error) ;
+       res.status(500).json({message:"Internal server errror"});
+    }
     }   
 
   // Get a single room by ID
@@ -106,5 +125,5 @@ let addRoom=async(req,res)=>{
                 }
             }
 
-    const RoomsController = {addRoom,getAllRooms,getRoom,deleteRoom,updateRoom};
+    const RoomsController = {addRoom,getAllRooms,getRoom,deleteRoom,updateRoom,getFeaturedRoom};
     export default RoomsController;
