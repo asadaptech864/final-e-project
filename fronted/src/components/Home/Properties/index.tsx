@@ -1,8 +1,35 @@
+"use client";
 import { Icon } from '@iconify/react'
 import PropertyCard from './Card/Card'
-import { propertyHomes } from '@/app/api/propertyhomes'
+import { useRooms } from '@/hooks/useRooms'
 
 const Properties: React.FC = () => {
+  const { rooms, loading, error } = useRooms();
+
+  if (loading) {
+    return (
+      <section>
+        <div className='container max-w-8xl mx-auto px-5 2xl:px-0'>
+          <div className='text-center py-20'>
+            <p className='text-lg'>Loading rooms...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section>
+        <div className='container max-w-8xl mx-auto px-5 2xl:px-0'>
+          <div className='text-center py-20'>
+            <p className='text-lg text-red-500'>Error: {error}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section>
       <div className='container max-w-8xl mx-auto px-5 2xl:px-0'>
@@ -28,7 +55,7 @@ const Properties: React.FC = () => {
           </p>
         </div>
         <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10'>
-          {propertyHomes.slice(0, 6).map((item, index) => (
+          {rooms.slice(0, 6).map((item, index) => (
             <div key={index} className=''>
               <PropertyCard item={item} />
             </div>

@@ -6,7 +6,7 @@ const router = express.Router();
 
 
 router
-.get("/", RoomsController.getAllRooms)
+.get("/allrooms", RoomsController.getAllRooms)
 .get("/:id", RoomsController.getRoom)
 .post("/addroom",upload.array('images', 5), RoomsController.addRoom)
 .delete("/delete/:id", RoomsController.deleteRoom)
