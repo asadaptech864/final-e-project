@@ -10,11 +10,11 @@ const page = () => {
     return (
         <>
             <HeroSub
-                title="Office Spaces."
-                description="Experience elegance and comfort with our exclusive luxury  villas, designed for sophisticated living."
-                badge="Properties"
+                title="Family Rooms"
+                description="Discover our family rooms, designed for comfort and convenience, perfect for families and groups."
+                badge="Rooms"
             />
-            <OfficeSpace />
+            <OfficeSpace roomType="Family Room"/>
         </>
     );
 };

@@ -1,16 +1,19 @@
 "use client"
 import React from 'react';
-import { propertyHomes } from '@/app/api/propertyhomes';
+// import { propertyHomes } from '@/app/api/propertyhomes';
 import { useParams } from "next/navigation";
 import { Icon } from '@iconify/react';
 import { testimonials } from '@/app/api/testimonial';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRooms } from '@/hooks/useRooms';
 
 export default function Details() {
     const { slug } = useParams();
 
-    const item = propertyHomes.find((item) => item.slug === slug);
+    const { rooms } = useRooms();
+    const item = rooms.find((item) => item.slug === slug);
+
     return (
         <section className="!pt-44 pb-20 relative" >
             <div className="container mx-auto max-w-8xl px-5 2xl:px-0">
