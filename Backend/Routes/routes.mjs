@@ -14,6 +14,7 @@ router
 .put("/update/:id", RoomsController.updateRoom)
 .post("/addroomtype", upload.single('image'), RoomTypeController.addRoomTypewithimage)
 .get("/roomtypes/limited", RoomTypeController.getFourRoomTypes)
+.get("/allroomtype", RoomTypeController.getAllRoomType)
 
 
 export default router;
