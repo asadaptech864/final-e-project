@@ -1,51 +1,9 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
 import SocialSignUp from "../SocialSignUp";
 import Logo from "@/components/Layout/Header/BrandLogo/Logo";
-import { useContext, useState } from "react";
-import AuthDialogContext from "@/app/context/AuthDialogContext";
-const SignUp = ({ signUpOpen }: { signUpOpen?: any }) => {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const authDialog = useContext(AuthDialogContext);
-
-  const handleSubmit = (e: any) => {
-    e.preventDefault();
-
-    setLoading(true);
-    const data = new FormData(e.currentTarget);
-    const value = Object.fromEntries(data.entries());
-    const finalData = { ...value };
-
-    fetch("/api/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(finalData),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        toast.success("Successfully registered");
-        setLoading(false);
-        router.push("/");
-      })
-      .catch((err) => {
-        toast.error(err.message);
-        setLoading(false);
-      });
-    setTimeout(() => {
-      signUpOpen(false);
-    }, 1200);
-    authDialog?.setIsUserRegistered(true);
-
-    setTimeout(() => {
-      authDialog?.setIsUserRegistered(false);
-    }, 1100);
-  };
-
+const SignUp = () => {
+  
   return (
     <>
       <div className="mb-10 text-center mx-auto inline-block max-w-[160px]">
@@ -61,7 +19,7 @@ const SignUp = ({ signUpOpen }: { signUpOpen?: any }) => {
         </span>
       </span>
 
-      <form onSubmit={handleSubmit}>
+      <form>
         <div className="mb-[22px]">
           <input
             type="text"
