@@ -1,45 +1,35 @@
 "use client";
-import { signIn, useSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useContext, useEffect, useState } from "react";
 import SocialSignIn from "../SocialSignIn";
 import toast, { Toaster } from 'react-hot-toast';
-import AuthDialogContext from "@/app/context/AuthDialogContext";
 import Logo from "@/components/Layout/Header/BrandLogo/Logo";
 
-const Signin = ({ signInOpen }: { signInOpen?: any }) => {
-  const { data: session } = useSession();
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("admin123");
+const Signin = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const authDialog = useContext(AuthDialogContext);
+  const [loading, setLoading] = useState(false);
 
-
-  const handleSubmit = async (e: any) => {
-    const notify = () => toast('Here is your toast.');
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
     const result = await signIn("credentials", {
       redirect: false,
-      username,
+      email,
       password,
+      callbackUrl: "/"
     });
     if (result?.error) {
-      setError(result.error);
-    }
-    if (result?.status === 200) {
-      setTimeout(() => {
-        signInOpen(false);
-      }, 1200);
-      authDialog?.setIsSuccessDialogOpen(true);
-      setTimeout(() => {
-        authDialog?.setIsSuccessDialogOpen(false);
-      }, 1100);
+      setError("Invalid email or password");
+      toast.error("Invalid email or password");
+      setLoading(false);
+    } else if (result?.ok) {
+      window.location.href = "/";
     } else {
-      authDialog?.setIsFailedDialogOpen(true);
-      setTimeout(() => {
-        authDialog?.setIsFailedDialogOpen(false);
-      }, 1100);
+      setLoading(false);
     }
   };
 
@@ -63,32 +53,35 @@ const Signin = ({ signInOpen }: { signInOpen?: any }) => {
         <div className="mb-[22px]">
           <input
             type="text"
-            placeholder="Username"
+            name="email"
+            placeholder="Email"
             required
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-2xl border placeholder:text-gray-400 border-black/10 dark:border-white/20 border-solid bg-transparent px-5 py-3 text-base text-dark outline-none transition  focus:border-primary focus-visible:shadow-none dark:border-border_color dark:text-white dark:focus:border-primary"
           />
         </div>
         <div className="mb-[22px]">
           <input
             type="password"
+            name="password"
             required
             value={password}
-            placeholder="Password"
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
             className="w-full rounded-2xl border border-black/10 dark:border-white/20 border-solid bg-transparent px-5 py-3 text-base text-dark outline-none transition  focus:border-primary focus-visible:shadow-none dark:border-border_color dark:text-white dark:focus:border-primary"
           />
         </div>
         <div className="mb-9">
           <button
             type="submit"
+            disabled={loading}
             className="flex w-full cursor-pointer items-center justify-center rounded-2xl border border-primary bg-primary hover:bg-transparent hover:text-primary px-5 py-3 text-base text-white transition duration-300 ease-in-out "
           >
-            Sign In
+            {loading ? "Signing in..." : "Sign In"}
           </button>
-
         </div>
+        {error && <div className="text-red-500 text-center mb-2">{error}</div>}
       </form>
 
       <div className="text-center">

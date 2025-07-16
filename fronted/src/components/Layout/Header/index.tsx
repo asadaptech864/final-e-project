@@ -7,12 +7,14 @@ import NavLink from './Navigation/NavLink'
 import { useTheme } from 'next-themes'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
+import { useSession, signOut } from "next-auth/react";
 
 const Header: React.FC = () => {
   const [sticky, setSticky] = useState(false)
   const [navbarOpen, setNavbarOpen] = useState(false)
   const { theme, setTheme } = useTheme()
   const pathname = usePathname()
+  const { data: session } = useSession();
 
   const sideMenuRef = useRef<HTMLDivElement>(null)
 
@@ -155,14 +157,25 @@ const Header: React.FC = () => {
                 {navLinks.map((item, index) => (
                   <NavLink key={index} item={item} onClick={() => setNavbarOpen(false)} />
                 ))}
-                <li className='flex items-center gap-4'>
-                  <Link href="/signin" className='py-4 px-8 bg-primary text-base leading-4 block w-fit text-white rounded-full border border-primary font-semibold mt-3 hover:bg-transparent hover:text-primary duration-300'>
-                    Sign In
-                  </Link>
-                  <Link href="/signup" className='py-4 px-8 bg-transparent border border-primary text-base leading-4 block w-fit text-primary rounded-full font-semibold mt-3 hover:bg-primary hover:text-white duration-300'>
-                    Sign up
-                  </Link>
-                </li>
+                {session ? (
+                  <li className='flex flex-col gap-2 items-start mt-3'>
+                    <span className='text-white'>Hi, {session.user?.name}</span>
+                    <button
+                      onClick={() => signOut({ callbackUrl: "/signin" })}
+                      className='py-2 px-6 bg-primary text-base text-white rounded-full border border-primary font-semibold hover:bg-transparent hover:text-primary duration-300'>
+                      Logout
+                    </button>
+                  </li>
+                ) : (
+                  <li className='flex items-center gap-4'>
+                    <Link href="/signin" className='py-4 px-8 bg-primary text-base leading-4 block w-fit text-white rounded-full border border-primary font-semibold mt-3 hover:bg-transparent hover:text-primary duration-300'>
+                      Sign In
+                    </Link>
+                    <Link href="/signup" className='py-4 px-8 bg-transparent border border-primary text-base leading-4 block w-fit text-primary rounded-full font-semibold mt-3 hover:bg-primary hover:text-white duration-300'>
+                      Sign up
+                    </Link>
+                  </li>
+                )}
               </ul>
             </nav>
           </div>

@@ -3,30 +3,43 @@ import Link from "next/link";
 import axios from 'axios';
 import SocialSignUp from "../SocialSignUp";
 import Logo from "@/components/Layout/Header/BrandLogo/Logo";
-const addUser = async (e) => {
-    e.preventDefault();
-    const name = document.getElementById('name')?.value || '';
-    const email = document.getElementById('email')?.value || '';
-    const password = document.getElementById('password')?.value || '';
-    if (name === "" || email === "" || password === "") {
-       alert("Please Fill All Fields") 
-    } else {
-        try {
-           let response= await
-            axios.post('http://localhost:3001/users/allusers', {
-                name,
-                email,
-                password
-            });
-            console.log(response.data);
-            alert("Product Added Successfully");
-        } catch (error) {
-            console.error("Failed To Add Product", error);
-            alert("Failed To Add Product");
-        }
-    }
-}
+import { signIn } from "next-auth/react";
+import { useState } from "react";
 const SignUp = () => {
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const addUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    const name = (document.getElementById('name') as HTMLInputElement)?.value;
+    const email = (document.getElementById('email') as HTMLInputElement)?.value;
+    const password = (document.getElementById('password') as HTMLInputElement)?.value;
+    if (name === "" || email === "" || password === "") {
+      setError("Please Fill All Fields");
+      setLoading(false);
+    } else {
+      try {
+        let response = await axios.post('http://localhost:3001/signup/adduser', {
+          name,
+          email,
+          password
+        });
+        // Automatically log in the user after signup
+        const loginResult = await signIn("credentials", {
+          redirect: true,
+          email,
+          password,
+          callbackUrl: "/"
+        });
+      } catch (error: any) {
+        const msg = error?.response?.data?.message || "Failed To Add User";
+        setError(msg);
+      }
+      setLoading(false);
+    }
+  };
   
   return (
     <>
@@ -43,7 +56,9 @@ const SignUp = () => {
         </span>
       </span>
 
-      <form>
+      {error && <div className="text-red-500 text-center mb-2">{error}</div>}
+
+      <form onSubmit={addUser}>
         <div className="mb-[22px]">
           <input
             type="text"
@@ -76,9 +91,11 @@ const SignUp = () => {
         </div>
         <div className="mb-9">
           <button
+            type="submit"
+            disabled={loading}
             className="flex w-full cursor-pointer items-center justify-center rounded-md bg-primary px-5 py-3 text-base text-white transition duration-300 ease-in-out hover:!bg-darkprimary dark:hover:!bg-darkprimary"
-            onClick={addUser} >
-            Sign Up
+          >
+            {loading ? "Signing up..." : "Sign Up"}
           </button>
         </div>
       </form>

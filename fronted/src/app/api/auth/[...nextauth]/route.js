@@ -17,17 +17,27 @@ const handler = NextAuth({
     CredentialsProvider({
       name: 'credentials',
       credentials: {
-        username: { label: 'Username', type: 'text' },
+        email: { label: 'Email', type: 'text' },
         password: { label: 'Password', type: 'password' },
       },
       authorize: async (credentials) => {
-        // Add your own authentication logic here
-        if (credentials.username === 'admin' && credentials.password === 'admin123') {
-          // Return user object if credentials are valid
-          return Promise.resolve({ id: 1, name: 'Admin', email: 'admin@example.com' });
-        } else {
-          // Return null if credentials are invalid
-          return Promise.resolve(null);
+        try {
+          const axios = (await import('axios')).default;
+          const response = await axios.post('http://localhost:3001/signin/login', {
+            email: credentials.email,
+            password: credentials.password,
+          });
+          if (response.status === 200 && response.data.user) {
+            return {
+              id: response.data.user._id,
+              name: response.data.user.name,
+              email: response.data.user.email,
+              token: response.data.token,
+            };
+          }
+          return null;
+        } catch (error) {
+          return null;
         }
       },
     }),
