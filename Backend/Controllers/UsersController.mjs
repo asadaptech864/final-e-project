@@ -1,6 +1,26 @@
-import Users from '../modals/userModal.mjs'
+import Users from '../Modals/UsersModal.mjs'
 import bcrypt from 'bcrypt' 
 import jwt from 'jsonwebtoken'  
+
+// Get all rooms
+let getAllUsers=async(req,res)=>{
+    try {
+    let users = await Users.find();
+    if (users.length == 0) {
+           res.status(404).json({message:"No Users found"});
+    } else {
+    
+        res.status(200).json({
+        message:"Our Users",
+        users:users,
+    })
+    } 
+    } catch (error) {
+       console.log(error) ;
+       res.status(500).json({message:"Internal server errror"});
+    }
+    }
+
 
 // Add a new Sign Up
         let addUser=async(req,res)=>{
@@ -19,7 +39,6 @@ import jwt from 'jsonwebtoken'
                        if (!adduser) {
                               res.status(404).json({message:"Failed to add User"});
                        } else {
-                       
                            res.status(200).json({
                            message:"User added successfully",
                            user:adduser,
@@ -79,5 +98,5 @@ if (checkUser.length == 0) {
         }
     }
   
-    const UserController = {addUser, LoginUser, auth};
+    const UserController = {addUser, LoginUser, auth, getAllUsers};
     export default UserController;

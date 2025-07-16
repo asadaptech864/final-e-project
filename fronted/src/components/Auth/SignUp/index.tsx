@@ -1,7 +1,31 @@
 "use client";
 import Link from "next/link";
+import axios from 'axios';
 import SocialSignUp from "../SocialSignUp";
 import Logo from "@/components/Layout/Header/BrandLogo/Logo";
+const addUser = async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('name')?.value || '';
+    const email = document.getElementById('email')?.value || '';
+    const password = document.getElementById('password')?.value || '';
+    if (name === "" || email === "" || password === "") {
+       alert("Please Fill All Fields") 
+    } else {
+        try {
+           let response= await
+            axios.post('http://localhost:3001/users/allusers', {
+                name,
+                email,
+                password
+            });
+            console.log(response.data);
+            alert("Product Added Successfully");
+        } catch (error) {
+            console.error("Failed To Add Product", error);
+            alert("Failed To Add Product");
+        }
+    }
+}
 const SignUp = () => {
   
   return (
@@ -25,6 +49,7 @@ const SignUp = () => {
             type="text"
             placeholder="Name"
             name="name"
+            id="name"
             required
             className="w-full rounded-md border border-black/10 dark:border-white/20 border-solid bg-transparent px-5 py-3 text-base text-dark outline-none transition placeholder:text-gray-300 focus:border-primary focus-visible:shadow-none dark:text-white dark:focus:border-primary"
           />
@@ -34,6 +59,7 @@ const SignUp = () => {
             type="email"
             placeholder="Email"
             name="email"
+            id="email"
             required
             className="w-full rounded-md border border-black/10 dark:border-white/20 border-solid bg-transparent px-5 py-3 text-base text-dark outline-none transition placeholder:text-gray-300 focus:border-primary focus-visible:shadow-none dark:text-white dark:focus:border-primary"
           />
@@ -43,15 +69,15 @@ const SignUp = () => {
             type="password"
             placeholder="Password"
             name="password"
+            id="password"
             required
             className="w-full rounded-md border border-black/10 dark:border-white/20 border-solid bg-transparent px-5 py-3 text-base text-dark outline-none transition placeholder:text-gray-300 focus:border-primary focus-visible:shadow-none dark:text-white dark:focus:border-primary"
           />
         </div>
         <div className="mb-9">
           <button
-            type="submit"
             className="flex w-full cursor-pointer items-center justify-center rounded-md bg-primary px-5 py-3 text-base text-white transition duration-300 ease-in-out hover:!bg-darkprimary dark:hover:!bg-darkprimary"
-          >
+            onClick={addUser} >
             Sign Up
           </button>
         </div>
