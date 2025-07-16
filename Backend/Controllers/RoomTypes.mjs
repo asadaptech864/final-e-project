@@ -1,23 +1,23 @@
 import RoomsTypes from '../Modals/RoomsType.mjs'
 
 // Get all rooms
-let getAllRoomType=async(req,res)=>{
-    try {
-    let roomtype = await RoomsTypes.find();
-    if (roomtype.length == 0) {
-           res.status(404).json({message:"No rooms found"});
-    } else {
-    
-        res.status(200).json({
-        message:"Our Rooms",
-        roomtype:roomtype,
-    })
-    } 
-    } catch (error) {
-       console.log(error) ;
-       res.status(500).json({message:"Internal server errror"});
-    }
-    }   
+let getAllRoomType = async(req,res)=>{
+  try {
+  let roomtype = await RoomsTypes.find();
+  if (roomtype.length == 0) {
+         res.status(404).json({message:"No rooms found"});
+  } else {
+  
+      res.status(200).json({
+      message:"Our Rooms",
+      rooms:rooms,
+  })
+  } 
+  } catch (error) {
+     console.log(error) ;
+     res.status(500).json({message:"Internal server errror"});
+  }
+  }
 
           // Add a new room type with image
           let addRoomTypewithimage=async(req,res)=>{
@@ -47,6 +47,23 @@ let getAllRoomType=async(req,res)=>{
             }
 
 // Get only 4 room types
+let checkRoomTypes = async (req, res) => {
+  try {
+    let roomtype = await RoomsTypes.find();
+    if (roomtype.length == 0) {
+      res.status(404).json({ message: "No rooms found" });
+    } else {
+      res.status(200).json({
+        message: "Our Rooms",
+        roomtype: roomtype,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+// Get only 4 room types
 let getFourRoomTypes = async (req, res) => {
   try {
     let roomtype = await RoomsTypes.find().limit(4);
@@ -66,5 +83,5 @@ let getFourRoomTypes = async (req, res) => {
 
 
 
-const RoomTypeController = {getAllRoomType,addRoomTypewithimage, getFourRoomTypes};
+const RoomTypeController = {getAllRoomType,addRoomTypewithimage, getFourRoomTypes, checkRoomTypes};
 export default RoomTypeController;

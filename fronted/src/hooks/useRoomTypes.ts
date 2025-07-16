@@ -24,7 +24,7 @@ export const useRoomTypes = () => {
   useEffect(() => {
     const fetchRoomTypes = async () => {
       try {
-        const response = await fetch('http://localhost:3001/allroomtype');
+        const response = await fetch('http://localhost:3001/roomtypes/limited');
         if (!response.ok) {
           throw new Error('Failed to fetch room types');
         }
