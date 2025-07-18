@@ -22,5 +22,6 @@ router
 .post("/signup/adduser", UserController.addUser)
 .post("/signin/login", UserController.LoginUser)
 .get("/users/allusers", UserController.getAllUsers)
+.delete("/deleteuser/:id", UserController.deleteuser)
 
 export default router;

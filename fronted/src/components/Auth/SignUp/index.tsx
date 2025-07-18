@@ -21,7 +21,7 @@ const SignUp = () => {
       setLoading(false);
     } else {
       try {
-        let response = await axios.post('http://localhost:3001/signup/adduser', {
+        const response = await axios.post('http://localhost:3001/signup/adduser', {
           name,
           email,
           password
@@ -33,11 +33,13 @@ const SignUp = () => {
           password,
           callbackUrl: "/"
         });
+        setLoading(false);
       } catch (error: any) {
+        setLoading(false);
         const msg = error?.response?.data?.message || "Failed To Add User";
         setError(msg);
       }
-      setLoading(false);
+      // setLoading(false);
     }
   };
   

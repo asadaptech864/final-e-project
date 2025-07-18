@@ -81,6 +81,25 @@ if (checkUser.length == 0) {
     }
     }
 
+
+    // detele user
+
+   let deleteuser=async(req,res)=>{
+    try {
+        let id=req.params.id;
+        let deleteUser=await Users.findByIdAndDelete(id);
+        if(!deleteUser){
+            res.status(404).json({message:"User not found"});
+        }else{
+            res.status(200).json({message:"User deleted successfully"});
+        }
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({message:"Internal server error"});
+    }
+}
+
     // auth 
 
     const auth = async (req, res, next)=>{
@@ -98,5 +117,5 @@ if (checkUser.length == 0) {
         }
     }
   
-    const UserController = {addUser, LoginUser, auth, getAllUsers};
+    const UserController = {addUser, LoginUser, auth, getAllUsers, deleteuser};
     export default UserController;
