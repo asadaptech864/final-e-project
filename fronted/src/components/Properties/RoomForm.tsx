@@ -166,7 +166,7 @@ const RoomForm: React.FC<RoomFormProps> = ({ onSuccess }) => {
           <select
             value={availability}
             onChange={e => setAvailability(e.target.value)}
-            className="w-full border px-2 py-1 rounded"
+            className="w-full border px-2 py-1 rounded bg-gray-100 dark:bg-gray-800"
           >
             <option value="Available">Available</option>
             <option value="Unavailable">Unavailable</option>
@@ -177,7 +177,7 @@ const RoomForm: React.FC<RoomFormProps> = ({ onSuccess }) => {
           <select
             value={status}
             onChange={e => setStatus(e.target.value)}
-            className="w-full border px-2 py-1 rounded"
+            className="w-full border px-2 py-1 rounded bg-gray-100 dark:bg-gray-800"
           >
             <option value="Clean">Clean</option>
             <option value="Dirty">Dirty</option>
@@ -201,7 +201,7 @@ const RoomForm: React.FC<RoomFormProps> = ({ onSuccess }) => {
         <select
           value={roomType}
           onChange={e => setRoomType(e.target.value)}
-          className="w-full border px-2 py-1 rounded"
+          className="w-full border px-2 py-1 rounded bg-gray-100 dark:bg-gray-800"
           required
         >
           <option value="">Select Room Type</option>
@@ -217,7 +217,7 @@ const RoomForm: React.FC<RoomFormProps> = ({ onSuccess }) => {
           accept="image/*"
           multiple
           onChange={e => setImages(e.target.files)}
-          className="w-full"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 shadow-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
           required
         />
       </div>

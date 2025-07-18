@@ -5,11 +5,11 @@ let getAllRoomType = async(req,res)=>{
   try {
   let roomtype = await RoomsTypes.find();
   if (roomtype.length == 0) {
-         res.status(404).json({message:"No rooms found"});
+         res.status(404).json({message:"No room type found"});
   } else {
   
       res.status(200).json({
-      message:"Our Rooms",
+      message:"Our Room Type",
       rooms:rooms,
   })
   } 
@@ -47,23 +47,6 @@ let getAllRoomType = async(req,res)=>{
             }
 
 // Get only 4 room types
-let checkRoomTypes = async (req, res) => {
-  try {
-    let roomtype = await RoomsTypes.find();
-    if (roomtype.length == 0) {
-      res.status(404).json({ message: "No rooms found" });
-    } else {
-      res.status(200).json({
-        message: "Our Rooms",
-        roomtype: roomtype,
-      });
-    }
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-// Get only 4 room types
 let getFourRoomTypes = async (req, res) => {
   try {
     let roomtype = await RoomsTypes.find().limit(4);
@@ -83,5 +66,5 @@ let getFourRoomTypes = async (req, res) => {
 
 
 
-const RoomTypeController = {getAllRoomType,addRoomTypewithimage, getFourRoomTypes, checkRoomTypes};
+const RoomTypeController = {getAllRoomType, addRoomTypewithimage, getFourRoomTypes};
 export default RoomTypeController;

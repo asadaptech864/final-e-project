@@ -49,7 +49,7 @@ const RoomsTablePage = () => {
           <thead>
             <tr className="bg-gray-100 dark:bg-gray-800">
               <th className="px-4 py-2 border">Name</th>
-              <th className="px-4 py-2 border">Location</th>
+              <th className="px-4 py-2 border">Room Type</th>
               <th className="px-4 py-2 border">Rate</th>
               <th className="px-4 py-2 border">Beds</th>
               <th className="px-4 py-2 border">Baths</th>
