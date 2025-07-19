@@ -35,9 +35,13 @@ const handler = NextAuth({
               token: response.data.token,
             };
           }
-          return null;
+          throw new Error(response.data.message || 'Invalid email or password');
         } catch (error) {
-          return null;
+          // If error.response exists, use its message
+          if (error.response && error.response.data && error.response.data.message) {
+            throw new Error(error.response.data.message);
+          }
+          throw new Error('Invalid email or password');
         }
       },
     }),

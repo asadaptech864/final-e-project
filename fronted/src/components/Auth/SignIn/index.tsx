@@ -23,8 +23,10 @@ const Signin = () => {
       callbackUrl: "/"
     });
     if (result?.error) {
-      setError("Invalid email or password");
-      toast.error("Invalid email or password");
+      // Sirf backend ka error show karo, static error hatao
+      let backendError = result.error;
+      setError(backendError || "");
+      if (backendError) toast.error(backendError);
       setLoading(false);
     } else if (result?.ok) {
       window.location.href = "/";

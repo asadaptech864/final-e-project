@@ -100,28 +100,29 @@ let getAllUsers=async(req,res)=>{
 let LoginUser=async(req,res)=>{
     try {
         let checkUser = await Users.findOne({email:req.body.email});
-if (checkUser.length == 0) {
-    res.status(404).json({message:"User not found. Please register now...."});
-} else {
-    const match = bcrypt.compareSync(req.body.password, checkUser.password);
-    if(match) {
-        const token = await jwt.sign({email: checkUser.email, _id: checkUser._id},process.env.JWT_SECRET,{ expiresIn: '12h'})
-        res.cookie("token",token, { maxAge: 43200, httpOnly: true})
-        res.status(200).json({
-            message:"User Login successfully",
-            user:checkUser,
-            token:token,
-        })
-    } else {
-        res.status(404).json({message:"Invalid Credentials"});
-    }
-}
-    
+        if (!checkUser) {
+            return res.status(404).json({message:"User not found. Please register now...."});
+        }
+        if (checkUser.isActive === false) {
+            return res.status(404).json({message: "Your account is Deactivated. Please contact Admin."});
+        }
+        const match = bcrypt.compareSync(req.body.password, checkUser.password);
+        if(match) {
+            const token = await jwt.sign({email: checkUser.email, _id: checkUser._id},process.env.JWT_SECRET,{ expiresIn: '12h'})
+            res.cookie("token",token, { maxAge: 43200, httpOnly: true})
+            return res.status(200).json({
+                message:"User Login successfully",
+                user:checkUser,
+                token:token,
+            })
+        } else {
+            return res.status(401).json({message:"Invalid Credentials"});
+        }
     } catch (error) {
        console.log(error) ;
-       res.status(500).json({message:"Internal server errror"});
+       res.status(500).json({message:"Internal server error"});
     }
-    }
+}
 
 
     // detele user
