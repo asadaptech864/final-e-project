@@ -23,5 +23,9 @@ router
 .post("/signin/login", UserController.LoginUser)
 .get("/users/allusers", UserController.getAllUsers)
 .delete("/deleteuser/:id", UserController.deleteuser)
+.patch("/deactivate/:id", UserController.deactivateAndActivateUser)
+.patch("/activate/:id", UserController.deactivateAndActivateUser)
+.patch("/edituser/:id", UserController.editUser)
+.get("/users/:id", UserController.getUserById)
 
 export default router;

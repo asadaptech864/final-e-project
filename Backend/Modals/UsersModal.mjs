@@ -18,8 +18,8 @@ const UserSchema = new Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'receptionist', 'housekeeping', 'manager', 'maintenance', 'admin'],
-    default: 'user'
+    enum: ['guest', 'receptionist', 'housekeeping', 'manager', 'maintenance', 'admin'],
+    default: 'guest'
   },
   isActive: {
     type: Boolean,
