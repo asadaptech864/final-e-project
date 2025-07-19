@@ -34,6 +34,9 @@ let getAllUsers=async(req,res)=>{
                             name:req.body.name,
                             email:req.body.email,
                             password:hash,
+                            role:req.body.role,
+                            isActive:req.body.isActive,
+
                             });
                        let adduser = await Users.insertOne(newUser);
                        if (!adduser) {
