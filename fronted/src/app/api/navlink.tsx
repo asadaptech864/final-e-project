@@ -7,12 +7,18 @@ export const basicNavLinks: NavLinks[] = [
   { label: 'Contact', href: '/contactus' },
 ]
 
-// Admin and Manager specific links
+// Admin specific links
 export const adminNavLinks: NavLinks[] = [
   { label: 'Home', href: '/' },
   { label: 'Rooms', href: '/rooms-table' },
   { label: 'Room Types', href: '/roomtype-table' },
   { label: 'Staffs', href: '/staff-table' },
+]
+//  Manager specific links
+export const managerNavLinks: NavLinks[] = [
+  { label: 'Home', href: '/' },
+  { label: 'Rooms', href: '/rooms-table' },
+  { label: 'Room Types', href: '/roomtype-table' },
 ]
 
 // Function to get navigation links based on user role
@@ -28,7 +34,7 @@ export const getNavLinks = (userRole?: string): NavLinks[] => {
   
   // All other roles get basic access
   if (userRole === 'manager') {
-  return basicNavLinks;
+    return managerNavLinks;
   }
   return basicNavLinks;
 }
