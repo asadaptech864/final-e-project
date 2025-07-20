@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useRoomTypes } from "@/hooks/useRoomTypes";
 import HeroSub from "@/components/shared/HeroSub";
+import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 
 const PAGE_SIZE = 5;
 
@@ -24,13 +25,14 @@ const RoomTypeTablePage = () => {
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <>
-    <HeroSub
-                title="Room Types"
-                description="Discover our premium room types, offering modern amenities and refined comfort for an unforgettable stay."
-                badge="Room Types"
-            />
-      <div className="p-6">
+    <ProtectedRoute allowedRoles={['admin', 'manager']}>
+      <>
+        <HeroSub
+          title="Room Types"
+          description="Discover our premium room types, offering modern amenities and refined comfort for an unforgettable stay."
+          badge="Room Types"
+        />
+        <div className="p-6">
       <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <input
           className="p-2 border rounded w-full max-w-xs"
@@ -93,8 +95,9 @@ const RoomTypeTablePage = () => {
           Next
         </button>
       </div>
-    </div>
-    </>
+          </div>
+      </>
+    </ProtectedRoute>
   );
 };
 

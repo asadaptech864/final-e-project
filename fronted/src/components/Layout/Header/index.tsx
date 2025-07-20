@@ -1,5 +1,5 @@
 'use client'
-import { navLinks } from '@/app/api/navlink'
+import { getNavLinks } from '@/app/api/navlink'
 import { Icon } from '@iconify/react'
 import Link from 'next/link'
 import { useEffect, useRef, useState, useCallback } from 'react'
@@ -8,6 +8,7 @@ import { useTheme } from 'next-themes'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { useSession, signOut } from "next-auth/react";
+import { useRole } from '@/hooks/useRole';
 
 const Header: React.FC = () => {
   const [sticky, setSticky] = useState(false)
@@ -15,6 +16,10 @@ const Header: React.FC = () => {
   const { theme, setTheme } = useTheme()
   const pathname = usePathname()
   const { data: session } = useSession();
+  const { userRole } = useRole();
+
+  // Get navigation links based on user role
+  const navLinks = getNavLinks(userRole);
 
   const sideMenuRef = useRef<HTMLDivElement>(null)
 
@@ -160,6 +165,7 @@ const Header: React.FC = () => {
                 {session ? (
                   <li className='flex flex-col gap-2 items-start mt-3'>
                     <span className='text-white'>Hi, {session.user?.name}</span>
+                    <span className='text-white/60 text-sm'>Role: {userRole || 'Guest'}</span>
                     <button
                       onClick={() => signOut({ callbackUrl: "/signin" })}
                       className='py-2 px-6 bg-primary text-base text-white rounded-full border border-primary font-semibold hover:bg-transparent hover:text-primary duration-300'>
