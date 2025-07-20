@@ -7,16 +7,18 @@ const handler = NextAuth({
   site: process.env.NEXTAUTH_URL || 'http://localhost:3000',
   callbacks: {
     async jwt({ token, user }) {
-      // Add role to token when user signs in
+      // Add user id to token when user signs in
       if (user) {
         token.role = user.role;
+        token.id = user.id || user._id; // Always set id from either field
       }
       return token;
     },
     async session({ session, token }) {
-      // Add role to session
+      // Add role and id to session
       if (token) {
         session.user.role = token.role;
+        if (token.id) session.user.id = token.id;
       }
       return session;
     },
