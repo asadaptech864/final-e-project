@@ -16,6 +16,8 @@ router
 .put("/update/:id", upload.array('images', 5), RoomsController.updateRoom)
 //rooms type routes
 .post("/addroomtype", upload.single('image'), RoomTypeController.addRoomTypewithimage)
+.put("/updateroomtype/:id", upload.single('image'), RoomTypeController.updateRoomType)
+.delete("/deleteroomtype/:id", RoomTypeController.deleteRoomType)
 .get("/roomtypes/limited", RoomTypeController.getFourRoomTypes)
 .get("/roomtypes/allroomtype", RoomTypeController.getAllRoomType)
 //users routes
