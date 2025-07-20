@@ -108,12 +108,13 @@ let LoginUser=async(req,res)=>{
         }
         const match = bcrypt.compareSync(req.body.password, checkUser.password);
         if(match) {
-            const token = await jwt.sign({email: checkUser.email, _id: checkUser._id},process.env.JWT_SECRET,{ expiresIn: '12h'})
+            const token = await jwt.sign({email: checkUser.email, _id: checkUser._id, role: checkUser.role},process.env.JWT_SECRET,{ expiresIn: '12h'})
             res.cookie("token",token, { maxAge: 43200, httpOnly: true})
             return res.status(200).json({
                 message:"User Login successfully",
                 user:checkUser,
                 token:token,
+                role: checkUser.role
             })
         } else {
             return res.status(401).json({message:"Invalid Credentials"});

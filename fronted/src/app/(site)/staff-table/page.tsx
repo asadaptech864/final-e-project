@@ -1,6 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import HeroSub from "@/components/shared/HeroSub";
+import ProtectedRoute from "@/components/Auth/ProtectedRoute";
+import { useRole } from "@/hooks/useRole";
 
 type User = {
   _id: string;
@@ -23,6 +25,7 @@ const roleLabel = (role: string) => {
 };
 
 export default function StaffTablePage() {
+  const { isManager } = useRole();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -123,8 +126,9 @@ export default function StaffTablePage() {
   if (error) return <div className="text-red-600">{error}</div>;
 
   return (
-    <>
-    <HeroSub
+    <ProtectedRoute allowedRoles={['admin', 'manager']}>
+      <>
+        <HeroSub
                 title="Staff Profiles"
                 description="View and manage your staff profiles."
                 badge="Staff"
@@ -156,7 +160,7 @@ export default function StaffTablePage() {
         </thead>
         <tbody>
           {paginated.map((user) => (
-            <tr key={user._id} className="hover:bg-gray-50">
+            <tr key={user._id} className="hover:bg-gray-00">
               <td className="px-4 py-2 border">{user.name}</td>
               <td className="px-4 py-2 border">{user.email}</td>
               <td className="px-4 py-2 border">{roleLabel(user.role)}</td>
@@ -223,5 +227,6 @@ export default function StaffTablePage() {
       </div>
     </div>
     </>
+    </ProtectedRoute>
   );
 } 

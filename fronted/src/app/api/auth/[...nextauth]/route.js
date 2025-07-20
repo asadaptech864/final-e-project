@@ -33,6 +33,7 @@ const handler = NextAuth({
               name: response.data.user.name,
               email: response.data.user.email,
               token: response.data.token,
+              role: response.data.user.role || response.data.role,
             };
           }
           throw new Error(response.data.message || 'Invalid email or password');
