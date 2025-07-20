@@ -5,6 +5,22 @@ import GitHubProvider from 'next-auth/providers/github';
 
 const handler = NextAuth({
   site: process.env.NEXTAUTH_URL || 'http://localhost:3000',
+  callbacks: {
+    async jwt({ token, user }) {
+      // Add role to token when user signs in
+      if (user) {
+        token.role = user.role;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      // Add role to session
+      if (token) {
+        session.user.role = token.role;
+      }
+      return session;
+    },
+  },
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,

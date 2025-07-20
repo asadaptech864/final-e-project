@@ -15,8 +15,8 @@ const Header: React.FC = () => {
   const [navbarOpen, setNavbarOpen] = useState(false)
   const { theme, setTheme } = useTheme()
   const pathname = usePathname()
-  const { data: session } = useSession();
-  const { userRole } = useRole();
+  const { data: session, status } = useSession();
+  const { userRole, isLoading } = useRole();
 
   // Get navigation links based on user role
   const navLinks = getNavLinks(userRole);
@@ -165,7 +165,9 @@ const Header: React.FC = () => {
                 {session ? (
                   <li className='flex flex-col gap-2 items-start mt-3'>
                     <span className='text-white'>Hi, {session.user?.name}</span>
-                    <span className='text-white/60 text-sm'>Role: {userRole || 'Guest'}</span>
+                    <span className='text-white/60 text-sm'>
+                      Role: {isLoading ? 'Loading...' : userRole}
+                    </span>
                     <button
                       onClick={() => signOut({ callbackUrl: "/signin" })}
                       className='py-2 px-6 bg-primary text-base text-white rounded-full border border-primary font-semibold hover:bg-transparent hover:text-primary duration-300'>
