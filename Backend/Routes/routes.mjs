@@ -13,7 +13,7 @@ router
 .get("/:id", RoomsController.getRoom)
 .post("/addroom",upload.array('images', 5), RoomsController.addRoom)
 .delete("/delete/:id", RoomsController.deleteRoom)
-.put("/update/:id", RoomsController.updateRoom)
+.put("/update/:id", upload.array('images', 5), RoomsController.updateRoom)
 //rooms type routes
 .post("/addroomtype", upload.single('image'), RoomTypeController.addRoomTypewithimage)
 .get("/roomtypes/limited", RoomTypeController.getFourRoomTypes)

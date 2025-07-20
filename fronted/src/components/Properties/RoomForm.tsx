@@ -9,9 +9,24 @@ interface RoomType {
 
 interface RoomFormProps {
   onSuccess?: () => void;
+  isEditMode?: boolean;
+  roomData?: {
+    _id: string;
+    name: string;
+    description: string;
+    rate: string;
+    beds: number;
+    baths: number;
+    area: number;
+    availability: string;
+    status: string;
+    capacity: number;
+    roomType: string;
+    images: string[];
+  };
 }
 
-const RoomForm: React.FC<RoomFormProps> = ({ onSuccess }) => {
+const RoomForm: React.FC<RoomFormProps> = ({ onSuccess, isEditMode = false, roomData }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [rate, setRate] = useState('');
@@ -27,6 +42,22 @@ const RoomForm: React.FC<RoomFormProps> = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // Initialize form with room data if in edit mode
+  useEffect(() => {
+    if (isEditMode && roomData) {
+      setName(roomData.name);
+      setDescription(roomData.description);
+      setRate(roomData.rate);
+      setBeds(roomData.beds);
+      setBaths(roomData.baths);
+      setArea(roomData.area);
+      setAvailability(roomData.availability);
+      setStatus(roomData.status);
+      setCapacity(roomData.capacity);
+      setRoomType(roomData.roomType);
+    }
+  }, [isEditMode, roomData]);
 
   useEffect(() => {
     // Fetch room types for dropdown
@@ -46,10 +77,18 @@ const RoomForm: React.FC<RoomFormProps> = ({ onSuccess }) => {
     e.preventDefault();
     setError(null);
     setSuccess(false);
-    if (!name || !description || !rate || !beds || !baths || !area || !capacity || !roomType || !images) {
-      setError('Please fill all required fields and upload images.');
+    
+    if (!name || !description || !rate || !beds || !baths || !area || !capacity || !roomType) {
+      setError('Please fill all required fields.');
       return;
     }
+
+    // Only require images for new rooms, not for editing
+    if (!isEditMode && !images) {
+      setError('Please upload images.');
+      return;
+    }
+
     setLoading(true);
     try {
       const formData = new FormData();
@@ -63,26 +102,41 @@ const RoomForm: React.FC<RoomFormProps> = ({ onSuccess }) => {
       formData.append('status', status);
       formData.append('capacity', capacity.toString());
       formData.append('roomType', roomType);
+      
       if (images) {
         Array.from(images).forEach((img) => formData.append('images', img));
       }
-      const res = await fetch('http://localhost:3001/addroom', {
-        method: 'POST',
+
+      const url = isEditMode 
+        ? `http://localhost:3001/update/${roomData?._id}`
+        : 'http://localhost:3001/addroom';
+      
+      const method = isEditMode ? 'PUT' : 'POST';
+      
+      const res = await fetch(url, {
+        method,
         body: formData,
       });
-      if (!res.ok) throw new Error('Failed to add room');
+      
+      if (!res.ok) throw new Error(`Failed to ${isEditMode ? 'update' : 'add'} room`);
+      
       setSuccess(true);
-      setName('');
-      setDescription('');
-      setRate('');
-      setBeds(1);
-      setBaths(1);
-      setArea(0);
-      setAvailability('Available');
-      setStatus('Clean');
-      setCapacity(1);
-      setRoomType('');
-      setImages(null);
+      
+      if (!isEditMode) {
+        // Reset form only for new rooms
+        setName('');
+        setDescription('');
+        setRate('');
+        setBeds(1);
+        setBaths(1);
+        setArea(0);
+        setAvailability('Available');
+        setStatus('Clean');
+        setCapacity(1);
+        setRoomType('');
+        setImages(null);
+      }
+      
       if (onSuccess) onSuccess();
     } catch (err: any) {
       setError(err.message || 'Something went wrong');
@@ -93,9 +147,9 @@ const RoomForm: React.FC<RoomFormProps> = ({ onSuccess }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto p-4 border rounded">
-      <h2 className="text-xl font-bold mb-2">Add Room</h2>
+      <h2 className="text-xl font-bold mb-2">{isEditMode ? 'Edit Room' : 'Add Room'}</h2>
       {error && <div className="text-red-500">{error}</div>}
-      {success && <div className="text-green-600">Room added successfully!</div>}
+      {success && <div className="text-green-600">Room {isEditMode ? 'updated' : 'added'} successfully!</div>}
       <div>
         <label className="block font-medium">Name *</label>
         <input
@@ -211,22 +265,25 @@ const RoomForm: React.FC<RoomFormProps> = ({ onSuccess }) => {
         </select>
       </div>
       <div>
-        <label className="block font-medium">Images *</label>
+        <label className="block font-medium">Images {!isEditMode && '*'}</label>
         <input
           type="file"
           accept="image/*"
           multiple
           onChange={e => setImages(e.target.files)}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 shadow-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-          required
+          required={!isEditMode}
         />
+        {isEditMode && (
+          <p className="text-sm text-gray-500 mt-1">Leave empty to keep existing images</p>
+        )}
       </div>
       <button
         type="submit"
         className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
         disabled={loading}
       >
-        {loading ? 'Submitting...' : 'Add Room'}
+        {loading ? (isEditMode ? 'Updating...' : 'Submitting...') : (isEditMode ? 'Update Room' : 'Add Room')}
       </button>
     </form>
   );

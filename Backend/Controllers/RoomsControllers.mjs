@@ -77,7 +77,7 @@ let addRoom=async(req,res)=>{
                  
             
             });
-            let addroom = await Rooms.insertOne(newRoom);
+            let addroom = await newRoom.save();
             if (!addroom) {
                    res.status(404).json({message:"Failed to add room"});
             } else {
@@ -97,7 +97,15 @@ let addRoom=async(req,res)=>{
              let updateRoom=async(req,res)=>{
                 try {
                     let id=req.params.id;
-                    let updateRoom=await Rooms.findByIdAndUpdate(id,req.body,{new:true});
+                    let updateData = { ...req.body };
+                    
+                    // Handle file uploads if new images are provided
+                    if (req.files && req.files.length > 0) {
+                        const imagePaths = req.files.map(file => file.path);
+                        updateData.images = imagePaths;
+                    }
+                    
+                    let updateRoom=await Rooms.findByIdAndUpdate(id, updateData, {new:true});
                     if(!updateRoom){
                         res.status(404).json({message:"Room not found"});
                     }else{
