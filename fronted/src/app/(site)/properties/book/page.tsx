@@ -88,7 +88,9 @@ export default function BookPage() {
       );
       if (!res.ok) throw new Error("Failed to check availability");
       const data = await res.json();
-      setAvailableRooms(data.availableRooms);
+      // Only keep rooms with status 'Vacant'
+      const vacantRooms = (data.availableRooms || []).filter((room) => room.status === "Vacant");
+      setAvailableRooms(vacantRooms);
       setChecked(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error checking availability.");
@@ -200,6 +202,22 @@ export default function BookPage() {
   const isSingleRoom = displayRooms.length === 1;
   const isLoggedIn = !!session?.user;
 
+  // Helper for status label and color
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "Vacant":
+        return <span className="text-green-600 font-semibold">Vacant</span>;
+      case "Cleaning":
+        return <span className="text-yellow-500 font-semibold">Cleaning (Not Available)</span>;
+      case "Maintenance":
+        return <span className="text-orange-500 font-semibold">Maintenance (Not Available)</span>;
+      case "Occupied":
+        return <span className="text-red-500 font-semibold">Occupied (Not Available)</span>;
+      default:
+        return <span className="text-gray-500 font-semibold">Unknown</span>;
+    }
+  };
+
   return (
     <section className="!pt-44 pb-20 min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto max-w-5xl px-5 2xl:px-0">
@@ -240,7 +258,7 @@ export default function BookPage() {
         <div className={isSingleRoom ? "grid grid-cols-1" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"}>
           {displayRooms.map((room) => {
             const roomId = (room as any)._id || (room as any).slug;
-            const isAvailable = checked ? availableIds.includes(roomId) : true;
+            const isAvailable = checked ? availableIds.includes(roomId) && room.status === "Vacant" : true;
             let imageSrc = "/images/properties/vector.svg";
             if (room.images && room.images.length > 0) {
               if (typeof room.images[0] === "string") imageSrc = room.images[0] as string;
@@ -260,12 +278,43 @@ export default function BookPage() {
                 <p className="text-dark/60 dark:text-white/60 mb-1">{room.roomType}</p>
                 <p className="text-dark/60 dark:text-white/60 mb-1">{room.beds} Beds • {room.baths} Baths • {room.area}m²</p>
                 <p className="text-primary font-bold text-lg mb-2">${room.rate} / night</p>
+                {/* Show room status */}
+                <div className="mb-2">Status: {getStatusLabel(room.status || "Unknown")}</div>
                 {checked && (
                   <div className="mb-2">
                     {isAvailable ? (
                       <span className="text-green-600 font-semibold">This room is available.</span>
                     ) : (
-                      <span className="text-red-500 font-semibold">This room is not available for these dates.</span>
+                      // Prioritize status first, then date, then both
+                      (() => {
+                        const status = room.status || "Unknown";
+                        const statusNotVacant = status !== "Vacant";
+                        const dateNotAvailable = !availableIds.includes(roomId);
+                        if (statusNotVacant && dateNotAvailable) {
+                          return (
+                           <span className="text-red-500 font-semibold">
+  {status === 'Occupied' && 'This room is currently occupied.'}
+  {status === 'Cleaning' && 'This room is currently under cleaning.'}
+  {status === 'Maintenance' && 'This room is currently under maintenance.'}
+</span>
+
+                          );
+                        } else if (statusNotVacant) {
+                          return (
+                            <span className="text-red-500 font-semibold">
+                              This room is under {status} now.
+                            </span>
+                          );
+                        } else if (dateNotAvailable) {
+                          return (
+                            <span className="text-red-500 font-semibold">
+                              This room is not available for the selected dates.
+                            </span>
+                          );
+                        } else {
+                          return null;
+                        }
+                      })()
                     )}
                   </div>
                 )}

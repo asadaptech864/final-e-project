@@ -10,6 +10,7 @@ export const createReservation = async (req, res) => {
     // Check if room is available for the given dates
     const overlapping = await Reservation.findOne({
       room,
+      status: { $ne: "Cancelled" }, // Only consider non-cancelled reservations
       $or: [
         { checkin: { $lt: new Date(checkout) }, checkout: { $gt: new Date(checkin) } },
       ],
@@ -91,6 +92,7 @@ export const getAvailableRooms = async (req, res) => {
     }
     // Find rooms that are NOT reserved for the given date range
     const reservedRooms = await Reservation.find({
+      status: { $ne: "Cancelled" }, // Only consider non-cancelled reservations
       $or: [
         { checkin: { $lt: new Date(checkout) }, checkout: { $gt: new Date(checkin) } },
       ],
