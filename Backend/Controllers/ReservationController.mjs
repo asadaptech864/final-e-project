@@ -115,3 +115,13 @@ export const getReservationsByGuest = async (req, res) => {
     res.status(500).json({ message: 'Error fetching reservations', error: error.message });
   }
 }; 
+
+// Get all reservations
+export const getAllReservations = async (req, res) => {
+  try {
+    const reservations = await Reservation.find().populate('room');
+    res.status(200).json({ reservations });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching reservations', error: error.message });
+  }
+};

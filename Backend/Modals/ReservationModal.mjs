@@ -10,6 +10,7 @@ const reservationSchema = new Schema({
   checkin: { type: Date, required: true },
   checkout: { type: Date, required: true },
   guests: { type: Number, required: true },
+  status: { type: String, default: "Pending" }, // Added status field
   additionalServices: { type: Object, default: {} }, // Save additional services as object
   createdAt: { type: Date, default: Date.now },
 });
