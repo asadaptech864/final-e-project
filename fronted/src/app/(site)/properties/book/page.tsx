@@ -7,12 +7,14 @@ import { useRouter } from "next/navigation";
 import { MappedRoom } from "@/hooks/useRooms";
 import { useSearchParams } from "next/navigation";
 import { Dialog } from "@headlessui/react";
+import { useRole } from "@/hooks/useRole";
 export default function BookPage() {
   const { rooms, loading } = useRooms();
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlRoomId = searchParams.get("room");
+  const { userRole } = useRole();
 
   // Set default dates: today and tomorrow
   const today = new Date();
@@ -44,6 +46,11 @@ export default function BookPage() {
     wakeupTime: "07:00",
     airportTime: "09:00",
   });
+  // Add state for guest/receptionist fields
+  const [guestPhone, setGuestPhone] = useState("");
+  const [recGuestName, setRecGuestName] = useState("");
+  const [recGuestEmail, setRecGuestEmail] = useState("");
+  const [recGuestPhone, setRecGuestPhone] = useState("");
 
   useEffect(() => {
     setChecked(false);
@@ -99,6 +106,10 @@ export default function BookPage() {
     setShowModal(false);
     setModalRoom(null);
     setAdditionalServices({ wakeup: false, spa: false, airport: false, wakeupTime: "07:00", airportTime: "09:00" });
+    setGuestPhone("");
+    setRecGuestName("");
+    setRecGuestEmail("");
+    setRecGuestPhone("");
   };
 
   const handleServiceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -123,10 +134,26 @@ export default function BookPage() {
     return total;
   };
 
+  // Only allow guest and receptionist to book
+  const canBook = userRole === "guest" || userRole === "receptionist";
+
   // The handleBook function is only called when the user clicks 'Confirm Booking' in the modal.
   const handleBook = async () => {
     if (!session?.user) {
       setError("You must be signed in to book a room.");
+      return;
+    }
+    if (!canBook) {
+      setError("Only guests and receptionists can make reservations.");
+      return;
+    }
+    // Validate required fields
+    if (userRole === "guest" && !guestPhone) {
+      setError("Please enter your phone number.");
+      return;
+    }
+    if (userRole === "receptionist" && (!recGuestName || !recGuestEmail || !recGuestPhone)) {
+      setError("Please enter guest name, email, and phone number.");
       return;
     }
     setConfirming(true);
@@ -138,9 +165,10 @@ export default function BookPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           room: (modalRoom as any)._id || (modalRoom as any).slug,
-          guestName: session.user.name,
-          guestEmail: session.user.email,
+          guestName: userRole === "receptionist" ? recGuestName : session.user.name,
+          guestEmail: userRole === "receptionist" ? recGuestEmail : session.user.email,
           guestId: session.user.id, // user id for backend
+          guestPhone: userRole === "guest" ? guestPhone : recGuestPhone,
           checkin: dates.checkin,
           checkout: dates.checkout,
           guests: modalGuests,
@@ -277,7 +305,7 @@ export default function BookPage() {
                 <p className="text-dark/70 dark:text-white/70 mb-4">You must be logged in to book a room.</p>
                 <a href="/signin" className="py-3 px-8 bg-primary text-white rounded-full text-center hover:bg-dark duration-300 text-base font-semibold">Login</a>
               </div>
-            ) : modalRoom && (
+            ) : modalRoom && canBook && (
               <>
                 <h2 className="text-2xl font-bold mb-4 text-dark dark:text-white text-center">Confirm Your Booking</h2>
                 <div className="mb-4">
@@ -323,6 +351,53 @@ export default function BookPage() {
                   <div className="mb-4 text-lg font-bold text-primary">
                     Total: ${getTotal(modalRoom)}
                   </div>
+                  {/* Role-based fields */}
+                  {userRole === "guest" && (
+                    <div className="mb-2">
+                      <label className="block font-medium mb-1">Phone Number</label>
+                      <input
+                        type="tel"
+                        value={guestPhone}
+                        onChange={e => setGuestPhone(e.target.value)}
+                        className="px-3 py-2 border border-black/10 dark:border-white/10 rounded-full outline-primary focus:outline w-full mb-2"
+                        placeholder="Enter your phone number"
+                      />
+                    </div>
+                  )}
+                  {userRole === "receptionist" && (
+                    <>
+                      <div className="mb-2">
+                        <label className="block font-medium mb-1">Guest Name</label>
+                        <input
+                          type="text"
+                          value={recGuestName}
+                          onChange={e => setRecGuestName(e.target.value)}
+                          className="px-3 py-2 border border-black/10 dark:border-white/10 rounded-full outline-primary focus:outline w-full mb-2"
+                          placeholder="Enter guest name"
+                        />
+                      </div>
+                      <div className="mb-2">
+                        <label className="block font-medium mb-1">Guest Email</label>
+                        <input
+                          type="email"
+                          value={recGuestEmail}
+                          onChange={e => setRecGuestEmail(e.target.value)}
+                          className="px-3 py-2 border border-black/10 dark:border-white/10 rounded-full outline-primary focus:outline w-full mb-2"
+                          placeholder="Enter guest email"
+                        />
+                      </div>
+                      <div className="mb-2">
+                        <label className="block font-medium mb-1">Guest Phone Number</label>
+                        <input
+                          type="tel"
+                          value={recGuestPhone}
+                          onChange={e => setRecGuestPhone(e.target.value)}
+                          className="px-3 py-2 border border-black/10 dark:border-white/10 rounded-full outline-primary focus:outline w-full mb-2"
+                          placeholder="Enter guest phone number"
+                        />
+                      </div>
+                    </>
+                  )}
                   <div className="flex gap-4">
                     <button
                       className="py-3 px-6 bg-primary text-white rounded-full text-center hover:bg-dark duration-300 text-base font-semibold w-full"
@@ -341,6 +416,13 @@ export default function BookPage() {
                   </div>
                 </div>
               </>
+            )}
+            {/* If not allowed to book, show message */}
+            {modalRoom && !canBook && (
+              <div className="flex flex-col items-center justify-center gap-4 py-8">
+                <h2 className="text-2xl font-bold text-dark dark:text-white mb-2">Not Allowed</h2>
+                <p className="text-dark/70 dark:text-white/70 mb-4">Only guests and receptionists can make reservations.</p>
+              </div>
             )}
           </div>
         </div>

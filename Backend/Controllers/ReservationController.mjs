@@ -4,8 +4,8 @@ import Rooms from '../Modals/RoomsModal.mjs';
 // Create a reservation
 export const createReservation = async (req, res) => {
   try {
-    const { room, guestName, guestEmail, guestId, checkin, checkout, guests, additionalServices } = req.body;
-    console.log('Reservation request body:', req.body);
+    const { room, guestName, guestEmail, guestPhone, guestId, checkin, checkout, guests, additionalServices } = req.body;
+    // console.log('Reservation request body:', req.body);
     // Check if room is available for the given dates
     const overlapping = await Reservation.findOne({
       room,
@@ -16,8 +16,12 @@ export const createReservation = async (req, res) => {
     if (overlapping) {
       return res.status(409).json({ message: 'Room is not available for the selected dates.' });
     }
-    console.log('Saving reservation:', { room, guestName, guestEmail, guestId, checkin, checkout, guests, additionalServices });
-    const reservation = new Reservation({ room, guestName, guestEmail, guestId, checkin, checkout, guests, additionalServices });
+    // Validate guestPhone
+    if (!guestPhone) {
+      return res.status(400).json({ message: 'Guest phone number is required.' });
+    }
+    // console.log('Saving reservation:', { room, guestName, guestEmail, guestId, checkin, checkout, guests, additionalServices });
+    const reservation = new Reservation({ room, guestName, guestEmail, guestPhone, guestId, checkin, checkout, guests, additionalServices });
     await reservation.save();
     res.status(201).json({ message: 'Reservation successful', reservation });
   } catch (error) {
