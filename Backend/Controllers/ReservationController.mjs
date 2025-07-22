@@ -106,15 +106,19 @@ export const getAvailableRooms = async (req, res) => {
 export const getReservationsByGuest = async (req, res) => {
   try {
     const { guestId } = req.params;
-    if (!guestId) {
-      return res.status(400).json({ message: 'guestId is required' });
+    const { email } = req.query;
+    if (!guestId && !email) {
+      return res.status(400).json({ message: 'guestId or email is required' });
     }
-    const reservations = await Reservation.find({ guestId }).populate('room');
+    const query = [];
+    if (guestId) query.push({ guestId });
+    if (email) query.push({ guestEmail: email });
+    const reservations = await Reservation.find({ $or: query }).populate('room');
     res.status(200).json({ reservations });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching reservations', error: error.message });
   }
-}; 
+};
 
 // Get all reservations
 export const getAllReservations = async (req, res) => {
@@ -123,5 +127,50 @@ export const getAllReservations = async (req, res) => {
     res.status(200).json({ reservations });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching reservations', error: error.message });
+  }
+};
+
+// Check-in a reservation
+export const checkInReservation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const reservation = await Reservation.findByIdAndUpdate(id, { status: 'Checked In' }, { new: true });
+    if (!reservation) return res.status(404).json({ message: 'Reservation not found' });
+    // Update room status
+    await Rooms.findByIdAndUpdate(reservation.room, { status: 'Occupied' });
+    res.status(200).json({ message: 'Checked in successfully', reservation });
+  } catch (error) {
+    res.status(500).json({ message: 'Error during check-in', error: error.message });
+  }
+};
+
+// Check-out a reservation
+export const checkOutReservation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const reservation = await Reservation.findByIdAndUpdate(id, { status: 'Checked Out' }, { new: true });
+    if (!reservation) return res.status(404).json({ message: 'Reservation not found' });
+    // Update room status
+    await Rooms.findByIdAndUpdate(reservation.room, { status: 'Vacant' });
+    res.status(200).json({ message: 'Checked out successfully', reservation });
+  } catch (error) {
+    res.status(500).json({ message: 'Error during check-out', error: error.message });
+  }
+};
+
+// Cancel a reservation
+export const cancelReservation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId, name, role } = req.body;
+    const reservation = await Reservation.findByIdAndUpdate(
+      id,
+      { status: 'Cancelled', cancelledBy: { userId, name, role } },
+      { new: true }
+    );
+    if (!reservation) return res.status(404).json({ message: 'Reservation not found' });
+    res.status(200).json({ message: 'Reservation cancelled', reservation });
+  } catch (error) {
+    res.status(500).json({ message: 'Error cancelling reservation', error: error.message });
   }
 };

@@ -4,7 +4,7 @@ export const useRole = () => {
   const { data: session, status } = useSession();
   
   // Get role from session with proper typing
-  let userRole = session?.user?.role || 'guest';
+  let userRole = session?.user?.role || 'user';
   
   // Debug logging
   console.log('Session:', session);

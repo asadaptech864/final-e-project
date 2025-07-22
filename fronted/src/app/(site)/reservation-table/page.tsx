@@ -20,6 +20,7 @@ type Reservation = {
     airportTime?: string;
   };
   status?: string;
+  cancelledBy?: { name: string; role: string };
 };
 
 export default function ReservationTablePage() {
@@ -29,6 +30,72 @@ export default function ReservationTablePage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [completedMsg, setCompletedMsg] = useState("");
+  const [cancelMsg, setCancelMsg] = useState("");
+
+  // Handler for check-in
+  const handleCheckIn = async (id: string) => {
+    setActionLoading(id + '-checkin');
+    try {
+      const res = await fetch(`http://localhost:3001/reservations/${id}/checkin`, { method: 'PATCH' });
+      if (!res.ok) throw new Error('Check-in failed');
+      // Refresh reservations
+      setReservations((prev) => prev.map(r => r._id === id ? { ...r, status: 'Checked In' } : r));
+    } catch (e) {
+      alert('Check-in failed');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+  // Handler for payment
+  const handlePayment = async (id: string) => {
+    setActionLoading(id + '-pay');
+    try {
+      // Simulate payment by setting status to Confirmed
+      // In real app, integrate payment gateway here
+      setReservations((prev) => prev.map(r => r._id === id ? { ...r, status: 'Confirmed' } : r));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+  // Handler for cancel
+  const handleCancel = async (id: string) => {
+    setActionLoading(id + '-cancel');
+    try {
+      const res = await fetch(`http://localhost:3001/reservations/${id}/cancel`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: session?.user?.id,
+          name: session?.user?.name,
+          role: userRole
+        })
+      });
+      if (!res.ok) throw new Error('Cancel failed');
+      const data = await res.json();
+      setReservations((prev) => prev.map(r => r._id === id ? { ...r, status: 'Cancelled', cancelledBy: data.reservation.cancelledBy } : r));
+    } catch (e) {
+      alert('Cancel failed');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+  // Handler for check-out
+  const handleCheckOut = async (id: string) => {
+    setActionLoading(id + '-checkout');
+    try {
+      const res = await fetch(`http://localhost:3001/reservations/${id}/checkout`, { method: 'PATCH' });
+      if (!res.ok) throw new Error('Check-out failed');
+      setReservations((prev) => prev.map(r => r._id === id ? { ...r, status: 'Checked Out' } : r));
+      setCompletedMsg('Reservation completed successfully!');
+      setTimeout(() => setCompletedMsg(''), 4000);
+    } catch (e) {
+      alert('Check-out failed');
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   useEffect(() => {
     if (!session?.user) return;
@@ -38,7 +105,9 @@ export default function ReservationTablePage() {
       try {
         let url = "";
         if (userRole === "guest") {
-          url = `http://localhost:3001/reservations/guest/${session.user.id}`;
+          const id = session.user.id;
+          const email = encodeURIComponent(session.user.email || "");
+          url = `http://localhost:3001/reservations/guest/${id}?email=${email}`;
         } else if (userRole === "receptionist") {
           url = `http://localhost:3001/reservations/all`;
         } else {
@@ -90,6 +159,7 @@ export default function ReservationTablePage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Email</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Additional Services</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Action</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
@@ -112,11 +182,86 @@ export default function ReservationTablePage() {
                       </ul>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">{r.status}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {/* Pending actions for guest and receptionist */}
+                      {r.status === 'Pending' && (
+                        <>
+                          {userRole === 'guest' && (
+                            <button
+                              className="py-1 px-4 bg-yellow-500 text-white rounded-full text-sm font-semibold hover:bg-yellow-600 disabled:opacity-60 mr-2"
+                              // Pay Now does nothing
+                              disabled={actionLoading === r._id + '-pay'}
+                            >
+                              Pay Now
+                            </button>
+                          )}
+                          {(userRole === 'guest' || userRole === 'receptionist') && (
+                            <button
+                              className="py-1 px-4 bg-red-600 text-white rounded-full text-sm font-semibold hover:bg-red-700 disabled:opacity-60"
+                              onClick={() => handleCancel(r._id)}
+                              disabled={actionLoading === r._id + '-cancel'}
+                            >
+                              {actionLoading === r._id + '-cancel' ? 'Cancelling...' : 'Cancel'}
+                            </button>
+                          )}
+                        </>
+                      )}
+                      {/* Guest actions: only Check In/Check Out */}
+                      {userRole === 'guest' && r.status === 'Confirmed' && (
+                        <button
+                          className="py-1 px-4 bg-green-600 text-white rounded-full text-sm font-semibold hover:bg-green-700 disabled:opacity-60"
+                          onClick={() => handleCheckIn(r._id)}
+                          disabled={actionLoading === r._id + '-checkin'}
+                        >
+                          {actionLoading === r._id + '-checkin' ? 'Checking In...' : 'Check In'}
+                        </button>
+                      )}
+                      {userRole === 'guest' && r.status === 'Checked In' && (
+                        <button
+                          className="py-1 px-4 bg-blue-600 text-white rounded-full text-sm font-semibold hover:bg-blue-700 disabled:opacity-60"
+                          onClick={() => handleCheckOut(r._id)}
+                          disabled={actionLoading === r._id + '-checkout'}
+                        >
+                          {actionLoading === r._id + '-checkout' ? 'Checking Out...' : 'Check Out'}
+                        </button>
+                      )}
+                      {userRole === 'guest' && r.status === 'Checked Out' && (
+                        <span className="text-green-700 font-semibold">Reservation Completed</span>
+                      )}
+                      {/* Receptionist: show state message if no action */}
+                      {userRole === 'receptionist' && r.status !== 'Pending' && (
+                        <span className={
+                          r.status === 'Cancelled' ? 'text-red-700 font-semibold' :
+                          r.status === 'Checked Out' ? 'text-green-700 font-semibold' :
+                          r.status === 'Checked In' ? 'text-blue-700 font-semibold' :
+                          'text-gray-700 font-semibold'
+                        }>
+                          {r.status === 'Cancelled'
+                            ? `Reservation cancelled by ${r.cancelledBy?.name || 'Unknown'} (${r.cancelledBy?.role || 'role'})`
+                            : r.status === 'Checked Out'
+                            ? 'Reservation completed'
+                            : r.status === 'Checked In'
+                            ? 'Checked In'
+                            : r.status === 'Confirmed'
+                            ? 'Confirmed'
+                            : ''}
+                        </span>
+                      )}
+                      {userRole === 'guest' && r.status === 'Cancelled' && (
+                        <span className="text-red-700 font-semibold">Reservation cancelled by {r.cancelledBy?.name || 'Unknown'} ({r.cancelledBy?.role || 'role'})</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        )}
+        {completedMsg && (
+          <div className="text-center text-green-600 font-semibold mb-4">{completedMsg}</div>
+        )}
+        {cancelMsg && (
+          <div className="text-center text-red-600 font-semibold mb-4">{cancelMsg}</div>
         )}
       </div>
     </section>

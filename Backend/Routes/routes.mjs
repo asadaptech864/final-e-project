@@ -3,7 +3,7 @@ import RoomsController from '../Controllers/RoomsControllers.mjs';
 import RoomTypeController from '../Controllers/RoomTypes.mjs';
 import { upload } from '../cloudinaryconfig.mjs';
 import UserController from '../Controllers/UsersController.mjs';
-import { createReservation, getAvailableRooms, getReservationsByGuest, getAllReservations } from '../Controllers/ReservationController.mjs';
+import { createReservation, getAvailableRooms, getReservationsByGuest, getAllReservations, checkInReservation, checkOutReservation, cancelReservation } from '../Controllers/ReservationController.mjs';
 const router = express.Router();
 
 
@@ -36,5 +36,8 @@ router.post('/reservations', createReservation);
 router.get('/reservations/available', getAvailableRooms);
 router.get('/reservations/guest/:guestId', getReservationsByGuest);
 router.get('/reservations/all', getAllReservations);
+router.patch('/reservations/:id/checkin', checkInReservation);
+router.patch('/reservations/:id/checkout', checkOutReservation);
+router.patch('/reservations/:id/cancel', cancelReservation);
 
 export default router;
