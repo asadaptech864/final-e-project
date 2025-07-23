@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRole } from "@/hooks/useRole";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 type Reservation = {
   _id: string;
@@ -23,12 +24,15 @@ type Reservation = {
   status?: string;
   cancelledBy?: { name: string; role: string };
   reservationId?: string;
+  price?: number; // Added price to the type
 };
 
 export default function ReservationTablePage() {
   const { data: session } = useSession();
   const { userRole } = useRole();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const created = searchParams.get("created");
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -51,12 +55,23 @@ export default function ReservationTablePage() {
     }
   };
   // Handler for payment
-  const handlePayment = async (id: string) => {
+  const handlePayment = async (id: string, reservationId: string, price: number) => {
     setActionLoading(id + '-pay');
     try {
-      // Simulate payment by setting status to Confirmed
-      // In real app, integrate payment gateway here
-      setReservations((prev) => prev.map(r => r._id === id ? { ...r, status: 'Confirmed' } : r));
+      // Call backend to create Stripe session
+      const stripeRes = await fetch("http://localhost:3001/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: price,
+          reservationId: reservationId,
+        }),
+      });
+      const stripeData = await stripeRes.json();
+      if (!stripeRes.ok) throw new Error(stripeData.error || "Failed to create Stripe session");
+      window.location.href = stripeData.url;
+    } catch (e) {
+      alert('Payment initiation failed');
     } finally {
       setActionLoading(null);
     }
@@ -142,6 +157,11 @@ export default function ReservationTablePage() {
     <section className="!pt-44 pb-20 min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto max-w-6xl px-5 2xl:px-0">
         <h1 className="text-3xl font-bold mb-8 text-dark dark:text-white text-center">Reservations</h1>
+        {created === "1" && (
+          <div className="bg-green-100 text-green-800 px-4 py-2 rounded mb-4 font-semibold text-center">
+            Reservation created successfully!
+          </div>
+        )}
         {loading ? (
           <div className="text-center py-10 text-lg">Loading...</div>
         ) : error ? (
@@ -193,10 +213,10 @@ export default function ReservationTablePage() {
                           {userRole === 'guest' && (
                             <button
                               className="py-1 px-4 bg-yellow-500 text-white rounded-full text-sm font-semibold hover:bg-yellow-600 disabled:opacity-60 mr-2"
-                              // Pay Now does nothing
+                              onClick={() => handlePayment(r._id, r.reservationId || '', (r as any).price || 0)}
                               disabled={actionLoading === r._id + '-pay'}
                             >
-                              Pay Now
+                              {actionLoading === r._id + '-pay' ? 'Redirecting...' : 'Pay Now'}
                             </button>
                           )}
                           {(userRole === 'guest' || userRole === 'receptionist') && (

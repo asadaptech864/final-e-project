@@ -18,6 +18,7 @@ const reservationSchema = new Schema({
     role: { type: String }
   },
   reservationId: { type: String, required: true, unique: true }, // Unique reservation ID
+  price: { type: Number, required: false }, // Total price for the reservation
   createdAt: { type: Date, default: Date.now },
 });
 

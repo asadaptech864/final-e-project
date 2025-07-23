@@ -161,7 +161,8 @@ export default function BookPage() {
     setError("");
     setSuccessMsg("");
     try {
-      // 1. Create reservation first
+      const total = getTotal(modalRoom);
+      // 1. Create reservation first (now includes price)
       const reservationRes = await fetch("http://localhost:3001/reservations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -175,24 +176,30 @@ export default function BookPage() {
           checkout: dates.checkout,
           guests: modalGuests,
           additionalServices,
+          price: total,
+          role: userRole, // Send user role to backend
         }),
       });
       const reservationData = await reservationRes.json();
       if (!reservationRes.ok) throw new Error(reservationData.message || "Failed to create reservation");
-      // 2. Create Stripe session, pass reservationId
-      const total = getTotal(modalRoom);
-      const stripeRes = await fetch("http://localhost:3001/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: total,
-          reservationId: reservationData.reservation.reservationId,
-        }),
-      });
-      const stripeData = await stripeRes.json();
-      if (!stripeRes.ok) throw new Error(stripeData.error || "Failed to create Stripe session");
-      // 3. Redirect to Stripe
-      window.location.href = stripeData.url;
+      if (userRole === "guest") {
+        // 2. Create Stripe session, pass reservationId
+        const stripeRes = await fetch("http://localhost:3001/create-checkout-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: total,
+            reservationId: reservationData.reservation.reservationId,
+          }),
+        });
+        const stripeData = await stripeRes.json();
+        if (!stripeRes.ok) throw new Error(stripeData.error || "Failed to create Stripe session");
+        // 3. Redirect to Stripe
+        window.location.href = stripeData.url;
+      } else if (userRole === "receptionist") {
+        // Redirect to reservations table with success message
+        router.push("/reservation-table?created=1");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Booking failed.");
     } finally {

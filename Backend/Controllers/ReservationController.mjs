@@ -5,7 +5,7 @@ import EmailController from './EmailController.mjs';
 // Create a reservation
 export const createReservation = async (req, res) => {
   try {
-    const { room, guestName, guestEmail, guestPhone, guestId, checkin, checkout, guests, additionalServices } = req.body;
+    const { room, guestName, guestEmail, guestPhone, guestId, checkin, checkout, guests, additionalServices, price, role } = req.body;
     // Generate a unique reservationId
     const generateReservationId = () => {
       const now = new Date();
@@ -39,7 +39,8 @@ export const createReservation = async (req, res) => {
       return res.status(400).json({ message: 'Guest phone number is required.' });
     }
     // console.log('Saving reservation:', { room, guestName, guestEmail, guestId, checkin, checkout, guests, additionalServices });
-    const reservation = new Reservation({ room, guestName, guestEmail, guestPhone, guestId, checkin, checkout, guests, additionalServices, reservationId });
+    const status = role === 'receptionist' ? 'Confirmed' : undefined;
+    const reservation = new Reservation({ room, guestName, guestEmail, guestPhone, guestId, checkin, checkout, guests, additionalServices, reservationId, price, status });
     await reservation.save();
     // Populate room details for email
     const populatedReservation = await Reservation.findById(reservation._id).populate('room');
