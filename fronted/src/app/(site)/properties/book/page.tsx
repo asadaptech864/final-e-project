@@ -149,7 +149,6 @@ export default function BookPage() {
       setError("Only guests and receptionists can make reservations.");
       return;
     }
-    // Validate required fields
     if (userRole === "guest" && !guestPhone) {
       setError("Please enter your phone number.");
       return;
@@ -162,30 +161,38 @@ export default function BookPage() {
     setError("");
     setSuccessMsg("");
     try {
-      const res = await fetch("http://localhost:3001/reservations", {
+      // 1. Create reservation first
+      const reservationRes = await fetch("http://localhost:3001/reservations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           room: (modalRoom as any)._id || (modalRoom as any).slug,
           guestName: userRole === "receptionist" ? recGuestName : session.user.name,
           guestEmail: userRole === "receptionist" ? recGuestEmail : session.user.email,
-          guestId: session.user.id, // user id for backend
+          guestId: session.user.id,
           guestPhone: userRole === "guest" ? guestPhone : recGuestPhone,
           checkin: dates.checkin,
           checkout: dates.checkout,
           guests: modalGuests,
-          additionalServices, // send as object for backend
+          additionalServices,
         }),
       });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "Failed to book room");
-      }
-      const data = await res.json();
-      setConfirmed(true);
-      setSuccessMsg(`Reservation confirmed! Your Reservation ID is: ${data.reservation?.reservationId || "N/A"}. Check your email for details.`);
-      setShowModal(false);
-      setModalRoom(null);
+      const reservationData = await reservationRes.json();
+      if (!reservationRes.ok) throw new Error(reservationData.message || "Failed to create reservation");
+      // 2. Create Stripe session, pass reservationId
+      const total = getTotal(modalRoom);
+      const stripeRes = await fetch("http://localhost:3001/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: total,
+          reservationId: reservationData.reservation.reservationId,
+        }),
+      });
+      const stripeData = await stripeRes.json();
+      if (!stripeRes.ok) throw new Error(stripeData.error || "Failed to create Stripe session");
+      // 3. Redirect to Stripe
+      window.location.href = stripeData.url;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Booking failed.");
     } finally {

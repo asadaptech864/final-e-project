@@ -1,4 +1,5 @@
 import Rooms from '../Modals/RoomsModal.mjs'
+import mongoose from 'mongoose';
 
 // Get all rooms
 let getAllRooms=async(req,res)=>{
@@ -41,17 +42,19 @@ let getFeaturedRoom=async(req,res)=>{
   // Get a single room by ID
   let getRoom=async(req,res)=>{
     try {
-    
         let id= req.params.id;
-    let room = await Rooms.find({_id:id});
-    if (room.length === 0) {
-        res.status(404).json({message: "No room found"});
-    } else {
-        res.status(200).json({
-        message:"room found",
-        room:room,
-    })
-    } 
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+          return res.status(400).json({ message: "Invalid room ID" });
+        }
+        let room = await Rooms.find({_id:id});
+        if (room.length === 0) {
+            res.status(404).json({message: "No room found"});
+        } else {
+            res.status(200).json({
+            message:"room found",
+            room:room,
+        })
+        } 
     } catch (error) {
        console.log(error) ;
        res.status(500).json({message:"Internal server errror"});
@@ -132,6 +135,20 @@ let addRoom=async(req,res)=>{
                     res.status(500).json({message:"Internal server error"});
                 }
             }
-
-    const RoomsController = {addRoom,getAllRooms,getRoom,deleteRoom,updateRoom,getFeaturedRoom};
+            //update room status
+            let updateRoomStatus=async(req,res)=>{
+                try {
+                    let id=req.params.id;
+                    let updateRoom=await Rooms.findByIdAndUpdate(id, req.body, {new:true});
+                    if(!updateRoom){
+                        res.status(404).json({message:"Room not found"});
+                    }else{
+                        res.status(200).json({message:"Room status updated successfully",room:updateRoom});
+                    }
+                } catch (error) {
+                    console.log(error);
+                    res.status(500).json({message:"Internal server error"});
+                }
+            }
+    const RoomsController = {addRoom,getAllRooms,getRoom,deleteRoom,updateRoom,getFeaturedRoom,updateRoomStatus};
     export default RoomsController;

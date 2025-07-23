@@ -46,6 +46,12 @@ export const housekeepingNavLinks: NavLinks[] = [
   { label: 'Maintenances', href: '/maintenance-requests' },
 ]
 
+// maintenance specific links
+export const maintenanceNavLinks: NavLinks[] = [
+  { label: 'Home', href: '/' },
+  { label: 'Maintenances', href: '/maintenance-requests' },
+  { label: 'Contact', href: '/contactus' },
+]
 // Function to get navigation links based on user role
 export const getNavLinks = (userRole?: string): NavLinks[] => {
   if (!userRole) {
@@ -71,7 +77,9 @@ export const getNavLinks = (userRole?: string): NavLinks[] => {
   if (userRole === 'housekeeping') {
     return housekeepingNavLinks;
   }
- 
+  if (userRole === 'maintenance') {
+    return maintenanceNavLinks;
+  }
   return basicNavLinks;
 }
 

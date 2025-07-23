@@ -6,9 +6,16 @@ import cookieParser from 'cookie-parser'
 import cors from 'cors'
 const app = express()
 dotenv.config()
-app.use(express.json())
 app.use(cors())
 app.use(cookieParser())
+// Use express.json for all routes except Stripe webhook
+app.use((req, res, next) => {
+  if (req.originalUrl === '/stripe-webhook') {
+    next();
+  } else {
+    express.json()(req, res, next);
+  }
+});
 main().catch(err => console.log(err));
 const port = process.env.PORT
 

@@ -4,6 +4,7 @@ import { useRooms } from "@/hooks/useRooms";
 import HeroSub from "@/components/shared/HeroSub";
 import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 import RoomForm from "@/components/Properties/RoomForm";
+import { useRole } from "@/hooks/useRole";
 
 const PAGE_SIZE = 5;
 
@@ -14,6 +15,7 @@ const RoomsTablePage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+  const { userRole } = useRole();
 
   // Filter rooms by name
   const filteredRooms = rooms.filter(room =>
@@ -63,6 +65,15 @@ const RoomsTablePage = () => {
     refreshRooms();
   };
 
+  const handleStatusChange = async (roomId: string, newStatus: string) => {
+    await fetch(`http://localhost:3001/rooms/update-status/${roomId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    refreshRooms();
+  };
+
   if (loading) return <div>Loading rooms...</div>;
   if (error) return <div>Error: {error}</div>;
 
@@ -82,12 +93,14 @@ const RoomsTablePage = () => {
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
-            <a
-              href="http://localhost:3000/properties/add-room"
-              className="bg-primary text-base font-semibold py-4 px-8 text-white hover:bg-white hover:text-dark duration-300 hover:cursor-pointer"
-              style={{borderRadius: '10px', padding: '10px 20px'}}>
-              Add Room
-            </a>
+            {userRole !== 'housekeeping' && (
+              <a
+                href="http://localhost:3000/properties/add-room"
+                className="bg-primary text-base font-semibold py-4 px-8 text-white hover:bg-white hover:text-dark duration-300 hover:cursor-pointer"
+                style={{borderRadius: '10px', padding: '10px 20px'}}>
+                Add Room
+              </a>
+            )}
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full border border-gray-200">
@@ -118,21 +131,36 @@ const RoomsTablePage = () => {
                       )}
                     </td>
                     <td className="px-4 py-2 border">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEdit(room)}
-                          className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                      {userRole === 'housekeeping' ? (
+                        <select
+                          value={room.status}
+                          onChange={e => handleStatusChange(room.slug, e.target.value)}
+                          className="border rounded px-2 py-1"
                         >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(room.slug)}
-                          disabled={deleteLoading === room.slug}
-                          className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 disabled:opacity-50"
-                        >
-                          {deleteLoading === room.slug ? 'Deleting...' : 'Delete'}
-                        </button>
-                      </div>
+                          <option value="Vacant">Vacant</option>
+                          <option value="Occupied">Occupied</option>
+                          <option value="Clean">Clean</option>
+                          <option value="Cleaning">Cleaning</option>
+                          <option value="Dirty">Dirty</option>
+                          <option value="Maintenance">Maintenance</option>
+                        </select>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEdit(room)}
+                            className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(room.slug)}
+                            disabled={deleteLoading === room.slug}
+                            className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 disabled:opacity-50"
+                          >
+                            {deleteLoading === room.slug ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
