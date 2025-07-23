@@ -7,6 +7,15 @@ export const basicNavLinks: NavLinks[] = [
   { label: 'Contact', href: '/contactus' },
 ]
 
+// Guest specific links
+export const guestNavLinks: NavLinks[] = [
+  { label: 'Home', href: '/' },
+  { label: 'Rooms', href: '/properties' },
+  { label: 'Booking', href: '/properties/book' },
+  { label: 'Reservations', href: '/reservation-table' },
+  { label: 'Maintenances', href: '/maintenance-requests' },
+  { label: 'Contact', href: '/contactus' },
+]
 // Admin specific links
 export const adminNavLinks: NavLinks[] = [
   { label: 'Home', href: '/' },
@@ -19,6 +28,7 @@ export const managerNavLinks: NavLinks[] = [
   { label: 'Home', href: '/' },
   { label: 'Rooms', href: '/rooms-table' },
   { label: 'Room Types', href: '/roomtype-table' },
+  { label: 'Maintenances', href: '/maintenance-requests' },
 ]
 
 // Receptionist specific links
@@ -28,13 +38,12 @@ export const receptionistNavLinks: NavLinks[] = [
   { label: 'Reservations', href: '/reservation-table' },
 ]
 
-// Guest specific links
-export const guestNavLinks: NavLinks[] = [
+// housekeeping specific links
+export const housekeepingNavLinks: NavLinks[] = [
   { label: 'Home', href: '/' },
-  { label: 'Rooms', href: '/properties' },
-  { label: 'Booking', href: '/properties/book' },
-  { label: 'Reservations', href: '/reservation-table' },
-  { label: 'Contact', href: '/contactus' },
+  { label: 'Rooms', href: '/rooms-table' },
+  { label: 'Report Maintenance', href: '/report' },
+  { label: 'Maintenances', href: '/maintenance-requests' },
 ]
 
 // Function to get navigation links based on user role
@@ -57,6 +66,10 @@ export const getNavLinks = (userRole?: string): NavLinks[] => {
 
   if (userRole === 'receptionist') {
     return receptionistNavLinks;
+  }
+
+  if (userRole === 'housekeeping') {
+    return housekeepingNavLinks;
   }
  
   return basicNavLinks;

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRole } from "@/hooks/useRole";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type Reservation = {
   _id: string;
@@ -21,6 +22,7 @@ type Reservation = {
   };
   status?: string;
   cancelledBy?: { name: string; role: string };
+  reservationId?: string;
 };
 
 export default function ReservationTablePage() {
@@ -151,6 +153,7 @@ export default function ReservationTablePage() {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-100 dark:bg-gray-800">
                 <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Reservation Id</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Room</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Check-in</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Check-out</th>
@@ -165,6 +168,7 @@ export default function ReservationTablePage() {
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                 {reservations.map((r, idx) => (
                   <tr key={r._id || idx}>
+                    <td className="px-4 py-3 whitespace-nowrap">{r.reservationId}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="font-semibold text-dark dark:text-white">{r.room?.name || "-"}</div>
                       <div className="text-xs text-dark/60 dark:text-white/60">{r.room?.roomType || "-"}</div>
@@ -217,13 +221,21 @@ export default function ReservationTablePage() {
                         </button>
                       )}
                       {userRole === 'guest' && r.status === 'Checked In' && (
-                        <button
-                          className="py-1 px-4 bg-blue-600 text-white rounded-full text-sm font-semibold hover:bg-blue-700 disabled:opacity-60"
-                          onClick={() => handleCheckOut(r._id)}
-                          disabled={actionLoading === r._id + '-checkout'}
-                        >
-                          {actionLoading === r._id + '-checkout' ? 'Checking Out...' : 'Check Out'}
-                        </button>
+                        <>
+                          <button
+                            className="py-1 px-4 bg-blue-600 text-white rounded-full text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 mr-2"
+                            onClick={() => handleCheckOut(r._id)}
+                            disabled={actionLoading === r.reservationId + '-checkout'}
+                          >
+                            {actionLoading === r._id + '-checkout' ? 'Checking Out...' : 'Check Out'}
+                          </button>
+                          <Link
+                            href={`/report?reservationId=${r.reservationId}`}
+                            className="py-1 px-4 bg-indigo-600 text-white rounded-full text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60"
+                          >
+                            Maintenance Request
+                          </Link>
+                        </>
                       )}
                       {userRole === 'guest' && r.status === 'Checked Out' && (
                         <span className="text-green-700 font-semibold">Reservation Completed</span>

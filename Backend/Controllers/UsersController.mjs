@@ -190,6 +190,15 @@ let deactivateAndActivateUser=async(req,res)=>{
             res.status(500).json({message:"Internal server errror"});
         }
     }
+
+const getAllMaintenanceUsers = async (req, res) => {
+  try {
+    const users = await Users.find({ role: 'maintenance' });
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch maintenance users' });
+  }
+};
   
-    const UserController = {addUser, LoginUser, auth, getAllUsers, deleteuser, deactivateAndActivateUser, editUser, getUserById};
+    const UserController = {addUser, LoginUser, auth, getAllUsers, deleteuser, deactivateAndActivateUser, editUser, getUserById, getAllMaintenanceUsers};
     export default UserController;

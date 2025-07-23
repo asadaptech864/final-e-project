@@ -181,8 +181,9 @@ export default function BookPage() {
         const data = await res.json();
         throw new Error(data.message || "Failed to book room");
       }
+      const data = await res.json();
       setConfirmed(true);
-      setSuccessMsg("Reservation confirmed! Check your email for details.");
+      setSuccessMsg(`Reservation confirmed! Your Reservation ID is: ${data.reservation?.reservationId || "N/A"}. Check your email for details.`);
       setShowModal(false);
       setModalRoom(null);
     } catch (err) {

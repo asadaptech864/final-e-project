@@ -17,6 +17,7 @@ const reservationSchema = new Schema({
     name: { type: String },
     role: { type: String }
   },
+  reservationId: { type: String, required: true, unique: true }, // Unique reservation ID
   createdAt: { type: Date, default: Date.now },
 });
 

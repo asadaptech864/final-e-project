@@ -67,7 +67,7 @@ const RoomsTablePage = () => {
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <ProtectedRoute allowedRoles={['admin', 'manager']}>
+    <ProtectedRoute allowedRoles={['admin', 'manager', 'housekeeping']}>
       <>
         <HeroSub
           title="Rooms"

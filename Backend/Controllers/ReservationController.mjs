@@ -6,6 +6,22 @@ import EmailController from './EmailController.mjs';
 export const createReservation = async (req, res) => {
   try {
     const { room, guestName, guestEmail, guestPhone, guestId, checkin, checkout, guests, additionalServices } = req.body;
+    // Generate a unique reservationId
+    const generateReservationId = () => {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const unique = Math.random().toString(36).substr(2, 6).toUpperCase();
+      return `RSV-${year}${month}-${unique}`;
+    };
+    let reservationId;
+    let isUnique = false;
+    // Ensure uniqueness in DB
+    while (!isUnique) {
+      reservationId = generateReservationId();
+      const exists = await Reservation.findOne({ reservationId });
+      if (!exists) isUnique = true;
+    }
     // console.log('Reservation request body:', req.body);
     // Check if room is available for the given dates
     const overlapping = await Reservation.findOne({
@@ -23,7 +39,7 @@ export const createReservation = async (req, res) => {
       return res.status(400).json({ message: 'Guest phone number is required.' });
     }
     // console.log('Saving reservation:', { room, guestName, guestEmail, guestId, checkin, checkout, guests, additionalServices });
-    const reservation = new Reservation({ room, guestName, guestEmail, guestPhone, guestId, checkin, checkout, guests, additionalServices });
+    const reservation = new Reservation({ room, guestName, guestEmail, guestPhone, guestId, checkin, checkout, guests, additionalServices, reservationId });
     await reservation.save();
     // Populate room details for email
     const populatedReservation = await Reservation.findById(reservation._id).populate('room');
@@ -174,5 +190,16 @@ export const cancelReservation = async (req, res) => {
     res.status(200).json({ message: 'Reservation cancelled', reservation });
   } catch (error) {
     res.status(500).json({ message: 'Error cancelling reservation', error: error.message });
+  }
+};
+
+// Get reservation by reservationId
+export const getReservationByReservationId = async (req, res) => {
+  try {
+    const { reservationId } = req.params;
+    const reservation = await Reservation.findOne({ reservationId }).populate('room');
+    res.status(200).json({ reservation });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching reservation', error: error.message });
   }
 };
