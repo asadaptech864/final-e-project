@@ -119,42 +119,44 @@ const Header: React.FC = () => {
                 className='dark:block hidden text-white'
               />
             </button>
-            {/* Notification Bell Icon */}
-            <div className="relative">
-              <button
-                className="relative"
-                onClick={() => setNotifOpen((open) => !open)}
-                aria-label="Show notifications"
-              >
-                <Icon icon="ph:bell" width={28} height={28} />
-                {notifications.some(n => !n.read) && (
-                  <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-                )}
-              </button>
-              {/* Notification Dropdown */}
-              {notifOpen && (
-                <ul className="absolute right-0 mt-2 w-80 bg-white dark:bg-dark shadow-lg rounded-lg z-50 max-h-96 overflow-auto">
-                  {notifications.length === 0 ? (
-                    <li className="p-4 text-center text-gray-500">No notifications</li>
-                  ) : (
-                    notifications.map((notif) => (
-                      <li
-                        key={notif._id}
-                        onClick={() => handleMarkRead(notif._id)}
-                        className={`p-4 flex flex-col gap-1 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer ${!notif.read ? "font-bold" : ""}`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-primary">[{notif.type}]</span>
-                          {!notif.read && <span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span>}
-                        </div>
-                        <span>{notif.message}</span>
-                        <span className="text-xs text-gray-400">{new Date(notif.createdAt).toLocaleString()}</span>
-                      </li>
-                    ))
+            {/* Notification Bell Icon - only show if logged in */}
+            {session && (
+              <div className="relative">
+                <button
+                  className="relative"
+                  onClick={() => setNotifOpen((open) => !open)}
+                  aria-label="Show notifications"
+                >
+                  <Icon icon="ph:bell" width={28} height={28} />
+                  {notifications.some(n => !n.read) && (
+                    <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
                   )}
-                </ul>
-              )}
-            </div>
+                </button>
+                {/* Notification Dropdown */}
+                {notifOpen && (
+                  <ul className="absolute right-0 mt-2 w-80 bg-white dark:bg-dark shadow-lg rounded-lg z-50 max-h-96 overflow-auto">
+                    {notifications.length === 0 ? (
+                      <li className="p-4 text-center text-gray-500">No notifications</li>
+                    ) : (
+                      notifications.map((notif) => (
+                        <li
+                          key={notif._id}
+                          onClick={() => handleMarkRead(notif._id)}
+                          className={`p-4 flex flex-col gap-1 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer ${!notif.read ? "font-bold" : ""}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-primary">[{notif.type}]</span>
+                            {!notif.read && <span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span>}
+                          </div>
+                          <span>{notif.message}</span>
+                          <span className="text-xs text-gray-400">{new Date(notif.createdAt).toLocaleString()}</span>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                )}
+              </div>
+            )}
             <div className={`hidden md:block`}>
               <Link href='#' className={`text-base text-inherit flex items-center gap-2 border-r pr-6 ${isHomepage
                 ? sticky
