@@ -10,7 +10,7 @@ export default function PaymentCancelPage() {
         href="/reservation-table"
         className="mt-6 px-6 py-3 bg-primary text-white rounded-full font-semibold hover:bg-dark transition"
       >
-        Back to Reservation And try to Again Payment
+        Return to Reservation and Retry Payment
       </a>
     </div>
   );

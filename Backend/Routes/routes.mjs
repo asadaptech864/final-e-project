@@ -42,7 +42,8 @@ router
 //maintenance routes
 .get("/allRequestedMaintenance/all", MaintenanceController.getAllMaintenanceRequests)
 .patch('/maintenance/requests/:id/assign', MaintenanceController.assignMaintenanceRequest)
-.patch('/maintenance/requests/:id/status', MaintenanceController.updateMaintenanceStatus);
+.patch('/maintenance/requests/:id/status', MaintenanceController.updateMaintenanceStatus)
+.post('/maintenance/requests', MaintenanceController.createMaintenanceRequest);
 
 // Reservation routes
 router.post('/reservations', createReservation);

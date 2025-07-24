@@ -32,11 +32,11 @@ router.post('/create-checkout-session', async (req, res) => {
 
 router.get('/stripe-session', async (req, res) => {
   const { session_id } = req.query;
-  console.log('Received /stripe-session request with session_id:', session_id);
+  // console.log('Received /stripe-session request with session_id:', session_id);
   if (!session_id) return res.status(400).json({ message: 'session_id required' });
   try {
     const session = await stripe.checkout.sessions.retrieve(session_id);
-    console.log('Fetched Stripe session:', session);
+    // console.log('Fetched Stripe session:', session);
     // Fallback: treat status 'complete' as paid if payment_status is not set
     let isPaid = session.payment_status === 'paid';
     if (!isPaid && session.status === 'complete') {
