@@ -10,6 +10,16 @@ import Image from 'next/image'
 import { useSession, signOut } from "next-auth/react";
 import { useRole } from '@/hooks/useRole';
 
+type Notification = {
+  _id: string;
+  userId: string;
+  type: string;
+  message: string;
+  data?: any;
+  read: boolean;
+  createdAt: string;
+};
+
 const Header: React.FC = () => {
   const [sticky, setSticky] = useState(false)
   const [navbarOpen, setNavbarOpen] = useState(false)
@@ -17,9 +27,26 @@ const Header: React.FC = () => {
   const pathname = usePathname()
   const { data: session, status } = useSession();
   const { userRole, isLoading } = useRole();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifOpen, setNotifOpen] = useState(false);
 
   // Get navigation links based on user role
   const navLinks = getNavLinks(userRole);
+
+  // Mark notification as read
+  const handleMarkRead = async (notifId: string) => {
+    try {
+      await fetch(`http://localhost:3001/notifications/read/${notifId}`, { method: 'PATCH' });
+      setNotifications((prev) => prev.map(n => n._id === notifId ? { ...n, read: true } : n));
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    fetch(`http://localhost:3001/notifications/${session.user.id}`)
+      .then(res => res.json())
+      .then(data => setNotifications(data.notifications || []));
+  }, [session?.user?.id]);
 
   const sideMenuRef = useRef<HTMLDivElement>(null)
 
@@ -92,6 +119,42 @@ const Header: React.FC = () => {
                 className='dark:block hidden text-white'
               />
             </button>
+            {/* Notification Bell Icon */}
+            <div className="relative">
+              <button
+                className="relative"
+                onClick={() => setNotifOpen((open) => !open)}
+                aria-label="Show notifications"
+              >
+                <Icon icon="ph:bell" width={28} height={28} />
+                {notifications.some(n => !n.read) && (
+                  <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
+              </button>
+              {/* Notification Dropdown */}
+              {notifOpen && (
+                <ul className="absolute right-0 mt-2 w-80 bg-white dark:bg-dark shadow-lg rounded-lg z-50 max-h-96 overflow-auto">
+                  {notifications.length === 0 ? (
+                    <li className="p-4 text-center text-gray-500">No notifications</li>
+                  ) : (
+                    notifications.map((notif) => (
+                      <li
+                        key={notif._id}
+                        onClick={() => handleMarkRead(notif._id)}
+                        className={`p-4 flex flex-col gap-1 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer ${!notif.read ? "font-bold" : ""}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-primary">[{notif.type}]</span>
+                          {!notif.read && <span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span>}
+                        </div>
+                        <span>{notif.message}</span>
+                        <span className="text-xs text-gray-400">{new Date(notif.createdAt).toLocaleString()}</span>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              )}
+            </div>
             <div className={`hidden md:block`}>
               <Link href='#' className={`text-base text-inherit flex items-center gap-2 border-r pr-6 ${isHomepage
                 ? sticky

@@ -8,6 +8,7 @@ import MaintenanceController from '../Controllers/MaintenanceController.mjs';
 import stripeRoutes from './stripeRoutes.mjs';
 import stripeWebhook from './stripeWebhook.mjs';
 import Reservation from '../Modals/ReservationModal.mjs';
+import { getUserNotifications, markNotificationRead } from '../Controllers/UsersController.mjs';
 const router = express.Router();
 
 // Register Stripe routes and webhook BEFORE any dynamic routes
@@ -74,5 +75,7 @@ router.post('/reservations/confirm', async (req, res) => {
 });
 // New: Send confirmation email after payment (for guests)
 router.post('/reservations/send-confirmation-email', sendReservationConfirmationEmail);
+router.get('/notifications/:userId', getUserNotifications);
+router.patch('/notifications/read/:notificationId', markNotificationRead);
 
 export default router;

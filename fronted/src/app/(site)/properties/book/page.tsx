@@ -16,15 +16,26 @@ export default function BookPage() {
   const urlRoomId = searchParams.get("room");
   const { userRole } = useRole();
 
-  // Set default dates: today and tomorrow
-  const today = new Date();
-  const tomorrow = new Date();
-  tomorrow.setDate(today.getDate() + 1);
-  const formatDate = (date) => date.toISOString().split("T")[0];
+  // Helper to format date in Pakistan Standard Time (UTC+5)
+  function formatDatePakistan(date) {
+    // Get UTC time, then add 5 hours for Pakistan
+    const pkOffset = 5 * 60; // minutes
+    const local = new Date(date.getTime() + (pkOffset + date.getTimezoneOffset()) * 60000);
+    return local.toISOString().split("T")[0];
+  }
 
+  // Helper to get local date string in YYYY-MM-DD
+  function getLocalDateString(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  const today = new Date();
   const [dates, setDates] = useState({
-    checkin: formatDate(today),
-    checkout: formatDate(tomorrow),
+    checkin: getLocalDateString(today),
+    checkout: getLocalDateString(today),
   });
   const [availableRooms, setAvailableRooms] = useState<MappedRoom[]>([]);
   const [checked, setChecked] = useState(false);
@@ -59,8 +70,8 @@ export default function BookPage() {
     setError("");
     setSuccessMsg("");
     // Validate check-out date
-    if (dates.checkout <= dates.checkin) {
-      setDateError("Check-out date must be greater than check-in date.");
+    if (dates.checkout < dates.checkin) {
+      setDateError("Check-out date must be equal to or greater than check-in date.");
     } else {
       setDateError("");
     }
@@ -73,10 +84,10 @@ export default function BookPage() {
 
   // The checkAvailable function only fetches available rooms, does not create a reservation.
   const checkAvailable = async () => {
-    if (dates.checkout <= dates.checkin) {
-      setDateError("Check-out date must be greater than check-in date.");
-      return;
-    }
+    // if (dates.checkout <= dates.checkin) {
+    //   setDateError("Check-out date must be greater than check-in date.");
+    //   return;
+    // }
     setChecking(true);
     setChecked(false);
     setAvailableRooms([]);
@@ -247,7 +258,7 @@ export default function BookPage() {
               value={dates.checkin}
               onChange={handleDateChange}
               required
-              min={formatDate(today)}
+              min={getLocalDateString(today)}
               className="px-4 py-3 border border-black/10 dark:border-white/10 rounded-full outline-primary focus:outline w-full md:w-auto"
             />
             <input

@@ -2,6 +2,7 @@ import Users from '../Modals/UsersModal.mjs'
 import bcrypt from 'bcrypt' 
 import jwt from 'jsonwebtoken'  
 import EmailController from './EmailController.mjs';
+import Notification from '../Modals/NotificationModal.mjs';
 
 // Get all rooms
 let getAllUsers=async(req,res)=>{
@@ -213,6 +214,29 @@ const getAllMaintenanceUsers = async (req, res) => {
     res.json({ users });
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch maintenance users' });
+  }
+};
+
+// Get notifications for a user
+export const getUserNotifications = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const notifications = await Notification.find({ userId }).sort({ createdAt: -1 });
+    res.status(200).json({ notifications });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching notifications', error: error.message });
+  }
+};
+
+// Mark a notification as read
+export const markNotificationRead = async (req, res) => {
+  try {
+    const { notificationId } = req.params;
+    const notif = await Notification.findByIdAndUpdate(notificationId, { read: true }, { new: true });
+    if (!notif) return res.status(404).json({ message: 'Notification not found' });
+    res.status(200).json({ notification: notif });
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating notification', error: error.message });
   }
 };
   
