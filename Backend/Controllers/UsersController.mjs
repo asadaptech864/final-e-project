@@ -46,38 +46,54 @@ let getAllUsers=async(req,res)=>{
                 if (user.length == 1) {
                     res.status(404).json({message:"User already exists"});
                 } else {
+                    // If role is null or not provided, treat as guest
+                    let userRole = req.body.role ? req.body.role : 'guest';
                     bcrypt.hash(req.body.password, 15).then(async function(hash){
                         let newUser = new Users({
                             name:req.body.name,
                             email:req.body.email,
                             password:hash,
-                            role:req.body.role,
+                            role:userRole,
                             isActive:req.body.isActive,
-
-                            });
+                        });
                        let adduser = await Users.insertOne(newUser);
                        if (!adduser) {
                               res.status(404).json({message:"Failed to add User"});
                        } else {
                            // Send welcome email
                            try {
-                             await EmailController.sendMail(
-                               req.body.email,
-                               'Welcome to Our Hotel Staff',
-                               `<div style="font-family:Arial,sans-serif;padding:20px;background:#f9f9f9;border-radius:8px;max-width:500px;margin:auto;">
-                                 <h2 style="color:#2d3748;">Welcome, ${req.body.name}!</h2>
-                                 <p>Congratulations! You have been added as a <b>${req.body.role}</b> in our hotel management system.</p>
-                                 <p>Your login details are:</p>
-                                 <ul style="margin:10px 0 20px 20px;padding:0;font-size:15px;">
-                                   <li><b>Email:</b> ${req.body.email}</li>
-                                   <li><b>Password:</b> ${req.body.password}</li>
-                                 </ul>
-                                 <p>Please use your email and password to log in and access your staff dashboard. For security, we recommend changing your password after your first login.</p>
-                                 <hr style="margin:20px 0;"/>
-                                 <p style="font-size:14px;color:#555;">If you have any questions, please contact your manager or IT support.</p>
-                                 <p style="font-size:12px;color:#888;">&copy; ${new Date().getFullYear()} Hotel Management System</p>
-                               </div>`
-                             );
+                             if (userRole === 'guest') {
+                               await EmailController.sendMail(
+                                 req.body.email,
+                                 'Welcome to Our Hotel',
+                                 `<div style="font-family:Arial,sans-serif;padding:20px;background:#f9f9f9;border-radius:8px;max-width:500px;margin:auto;">
+                                   <h2 style="color:#2d3748;">Welcome, ${req.body.name}!</h2>
+                                   <p>Thank you for signing up as a guest at our hotel. We are excited to have you with us!</p>
+                                   <p>You can now log in and book your stay with us. If you have any questions, feel free to contact our support team.</p>
+                                   <hr style="margin:20px 0;"/>
+                                   <p style="font-size:14px;color:#555;">We look forward to serving you.</p>
+                                   <p style="font-size:12px;color:#888;">&copy; ${new Date().getFullYear()} Hotel Reservation System</p>
+                                 </div>`
+                               );
+                             } else {
+                               await EmailController.sendMail(
+                                 req.body.email,
+                                 'Welcome to Our Hotel Staff',
+                                 `<div style="font-family:Arial,sans-serif;padding:20px;background:#f9f9f9;border-radius:8px;max-width:500px;margin:auto;">
+                                   <h2 style="color:#2d3748;">Welcome, ${req.body.name}!</h2>
+                                   <p>Congratulations! You have been added as a <b>${userRole}</b> in our hotel management system.</p>
+                                   <p>Your login details are:</p>
+                                   <ul style="margin:10px 0 20px 20px;padding:0;font-size:15px;">
+                                     <li><b>Email:</b> ${req.body.email}</li>
+                                     <li><b>Password:</b> ${req.body.password}</li>
+                                   </ul>
+                                   <p>Please use your email and password to log in and access your staff dashboard. For security, we recommend changing your password after your first login.</p>
+                                   <hr style="margin:20px 0;"/>
+                                   <p style="font-size:14px;color:#555;">If you have any questions, please contact your manager or IT support.</p>
+                                   <p style="font-size:12px;color:#888;">&copy; ${new Date().getFullYear()} Hotel Management System</p>
+                                 </div>`
+                               );
+                             }
                            } catch (e) {
                              console.log('Email send error:', e);
                            }

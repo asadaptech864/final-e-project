@@ -19,6 +19,7 @@ export interface BackendRoom {
 
 // Define the mapped structure for FeaturedProperty
 export interface FeaturedRoom {
+  id: string;
   name: string;
   description: string;
   rate: string;
@@ -47,6 +48,7 @@ export const useFeaturedRoom = () => {
         if (data.room) {
           // Map backend data to frontend structure
           const mappedRoom: FeaturedRoom = {
+            id: data.room._id,
             name: data.room.name,
             description: data.room.description,
             rate: data.room.rate,

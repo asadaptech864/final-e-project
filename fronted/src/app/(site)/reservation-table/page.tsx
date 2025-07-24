@@ -114,6 +114,18 @@ export default function ReservationTablePage() {
     }
   };
 
+  // Helper: show Check In button only between checkin and checkout (inclusive)
+  const canShowCheckIn = (r: Reservation) => {
+    if (r.status !== 'Confirmed') return false;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const checkinDate = new Date(r.checkin);
+    checkinDate.setHours(0,0,0,0);
+    const checkoutDate = new Date(r.checkout);
+    checkoutDate.setHours(0,0,0,0);
+    return today >= checkinDate && today <= checkoutDate;
+  };
+
   useEffect(() => {
     if (!session?.user) return;
     const fetchReservations = async () => {
@@ -231,7 +243,7 @@ export default function ReservationTablePage() {
                         </>
                       )}
                       {/* Guest actions: only Check In/Check Out */}
-                      {userRole === 'guest' && r.status === 'Confirmed' && (
+                      {userRole === 'guest' && canShowCheckIn(r) && (
                         <button
                           className="py-1 px-4 bg-green-600 text-white rounded-full text-sm font-semibold hover:bg-green-700 disabled:opacity-60"
                           onClick={() => handleCheckIn(r._id)}

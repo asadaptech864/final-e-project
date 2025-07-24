@@ -24,6 +24,12 @@ export default function PaymentSuccessPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ reservationId: data.reservationId }),
         });
+        // 3. Send confirmation email after payment (for guests)
+        await fetch("http://localhost:3001/reservations/send-confirmation-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reservationId: data.reservationId }),
+        });
         setMessage("Your payment is successfully complete.");
         setTimeout(() => setShow(false), 2000);
       } else {

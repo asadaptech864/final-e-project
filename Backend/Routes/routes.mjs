@@ -3,7 +3,7 @@ import RoomsController from '../Controllers/RoomsControllers.mjs';
 import RoomTypeController from '../Controllers/RoomTypes.mjs';
 import { upload } from '../cloudinaryconfig.mjs';
 import UserController from '../Controllers/UsersController.mjs';
-import { createReservation, getAvailableRooms, getReservationsByGuest, getAllReservations, checkInReservation, checkOutReservation, cancelReservation, getReservationByReservationId } from '../Controllers/ReservationController.mjs';
+import { createReservation, getAvailableRooms, getReservationsByGuest, getAllReservations, checkInReservation, checkOutReservation, cancelReservation, getReservationByReservationId, sendReservationConfirmationEmail } from '../Controllers/ReservationController.mjs';
 import MaintenanceController from '../Controllers/MaintenanceController.mjs';
 import stripeRoutes from './stripeRoutes.mjs';
 import stripeWebhook from './stripeWebhook.mjs';
@@ -71,5 +71,7 @@ router.post('/reservations/confirm', async (req, res) => {
     res.status(500).json({ message: 'Error confirming reservation', error: e.message });
   }
 });
+// New: Send confirmation email after payment (for guests)
+router.post('/reservations/send-confirmation-email', sendReservationConfirmationEmail);
 
 export default router;
