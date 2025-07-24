@@ -88,9 +88,9 @@ export default function BookPage() {
       );
       if (!res.ok) throw new Error("Failed to check availability");
       const data = await res.json();
-      // Only keep rooms with status 'Vacant'
-      const vacantRooms = (data.availableRooms || []).filter((room) => room.status === "Vacant");
-      setAvailableRooms(vacantRooms);
+      // Instead, allow both 'Vacant' and 'Clean' rooms
+      const availableRoomsFiltered = (data.availableRooms || []).filter((room) => room.status === "Vacant" || room.status === "Clean");
+      setAvailableRooms(availableRoomsFiltered);
       setChecked(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error checking availability.");
@@ -224,6 +224,8 @@ export default function BookPage() {
         return <span className="text-green-600 font-semibold">Vacant</span>;
       case "Cleaning":
         return <span className="text-yellow-500 font-semibold">Cleaning (Not Available)</span>;
+      case "Clean":
+        return <span className="text-blue-500 font-semibold">Clean</span>;
       case "Maintenance":
         return <span className="text-orange-500 font-semibold">Maintenance (Not Available)</span>;
       case "Occupied":
@@ -273,7 +275,7 @@ export default function BookPage() {
         <div className={isSingleRoom ? "grid grid-cols-1" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"}>
           {displayRooms.map((room) => {
             const roomId = (room as any)._id || (room as any).slug;
-            const isAvailable = checked ? availableIds.includes(roomId) && room.status === "Vacant" : true;
+            const isAvailable = checked ? availableIds.includes(roomId) && (room.status === "Vacant" || room.status === "Clean") : true;
             let imageSrc = "/images/properties/vector.svg";
             if (room.images && room.images.length > 0) {
               if (typeof room.images[0] === "string") imageSrc = room.images[0] as string;
@@ -303,18 +305,17 @@ export default function BookPage() {
                       // Prioritize status first, then date, then both
                       (() => {
                         const status = room.status || "Unknown";
-                        const statusNotVacant = status !== "Vacant";
+                        const statusNotVacantOrClean = status !== "Vacant" && status !== "Clean";
                         const dateNotAvailable = !availableIds.includes(roomId);
-                        if (statusNotVacant && dateNotAvailable) {
+                        if (statusNotVacantOrClean && dateNotAvailable) {
                           return (
                            <span className="text-red-500 font-semibold">
   {status === 'Occupied' && 'This room is currently occupied.'}
   {status === 'Cleaning' && 'This room is currently under cleaning.'}
   {status === 'Maintenance' && 'This room is currently under maintenance.'}
 </span>
-
                           );
-                        } else if (statusNotVacant) {
+                        } else if (statusNotVacantOrClean) {
                           return (
                             <span className="text-red-500 font-semibold">
                               This room is under {status} now.
