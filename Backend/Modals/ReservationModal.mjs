@@ -20,6 +20,9 @@ const reservationSchema = new Schema({
   reservationId: { type: String, required: true, unique: true }, // Unique reservation ID
   price: { type: Number, required: false }, // Total price for the reservation
   createdAt: { type: Date, default: Date.now },
+  actualCheckout: { type: Date }, // Actual checkout date
+  bill: { type: Object }, // Bill breakdown
+  invoiceHtml: { type: String }, // Invoice HTML for download/email
 });
 
 const Reservation = mongoose.model("Reservation", reservationSchema);

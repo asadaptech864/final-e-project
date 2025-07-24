@@ -25,6 +25,8 @@ type Reservation = {
   cancelledBy?: { name: string; role: string };
   reservationId?: string;
   price?: number; // Added price to the type
+  invoiceHtml?: string;
+  bill?: any;
 };
 
 export default function ReservationTablePage() {
@@ -39,6 +41,7 @@ export default function ReservationTablePage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [completedMsg, setCompletedMsg] = useState("");
   const [cancelMsg, setCancelMsg] = useState("");
+  const [invoiceModal, setInvoiceModal] = useState<{ open: boolean; html: string }>({ open: false, html: "" });
 
   // Handler for check-in
   const handleCheckIn = async (id: string) => {
@@ -124,6 +127,14 @@ export default function ReservationTablePage() {
     const checkoutDate = new Date(r.checkout);
     checkoutDate.setHours(0,0,0,0);
     return today >= checkinDate && today <= checkoutDate;
+  };
+
+  // Add a function to fetch a single reservation by ID
+  const fetchReservationById = async (id: string) => {
+    const res = await fetch(`http://localhost:3001/reservations/by-id/${id}`);
+    if (!res.ok) throw new Error("Failed to fetch reservation");
+    const data = await res.json();
+    return data.reservation;
   };
 
   useEffect(() => {
@@ -242,17 +253,21 @@ export default function ReservationTablePage() {
                           )}
                         </>
                       )}
-                      {/* Guest actions: only Check In/Check Out */}
-                      {userRole === 'guest' && canShowCheckIn(r) && (
-                        <button
-                          className="py-1 px-4 bg-green-600 text-white rounded-full text-sm font-semibold hover:bg-green-700 disabled:opacity-60"
-                          onClick={() => handleCheckIn(r._id)}
-                          disabled={actionLoading === r._id + '-checkin'}
-                        >
-                          {actionLoading === r._id + '-checkin' ? 'Checking In...' : 'Check In'}
-                        </button>
+                        {/* Guest actions: only Check In/Check Out */}
+                      {userRole === 'guest' && r.status === 'Confirmed' && (
+                        canShowCheckIn(r) ? (
+                          <button
+                            className="py-1 px-4 bg-green-600 text-white rounded-full text-sm font-semibold hover:bg-green-700 disabled:opacity-60"
+                            onClick={() => handleCheckIn(r._id)}
+                            disabled={actionLoading === r._id + '-checkin'}
+                          >
+                            {actionLoading === r._id + '-checkin' ? 'Checking In...' : 'Check In'}
+                          </button>
+                        ) : (
+                          <div className="text-red-500 font-semibold">Your check-in date is not today.</div>
+                        )
                       )}
-                      {userRole === 'guest' && r.status === 'Checked In' && (
+                        {userRole === 'guest' && r.status === 'Checked In' && (
                         <>
                           <button
                             className="py-1 px-4 bg-blue-600 text-white rounded-full text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 mr-2"
@@ -270,7 +285,22 @@ export default function ReservationTablePage() {
                         </>
                       )}
                       {userRole === 'guest' && r.status === 'Checked Out' && (
-                        <span className="text-green-700 font-semibold">Reservation Completed</span>
+                        <>
+                          <span className="text-green-700 font-semibold">Reservation Completed</span>
+                          <button
+                            className="ml-2 py-1 px-4 bg-gray-700 text-white rounded-full text-sm font-semibold hover:bg-gray-900 disabled:opacity-60"
+                            onClick={async () => {
+                              try {
+                                const reservation = await fetchReservationById(r._id);
+                                setInvoiceModal({ open: true, html: reservation.invoiceHtml || "No invoice available." });
+                              } catch {
+                                setInvoiceModal({ open: true, html: "Failed to load invoice." });
+                              }
+                            }}
+                          >
+                            View Invoice
+                          </button>
+                        </>
                       )}
                       {/* Receptionist: show state message if no action */}
                       {userRole === 'receptionist' && r.status !== 'Pending' && (
@@ -308,6 +338,19 @@ export default function ReservationTablePage() {
           <div className="text-center text-red-600 font-semibold mb-4">{cancelMsg}</div>
         )}
       </div>
+      {invoiceModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg max-w-2xl w-full p-6 relative">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-900"
+              onClick={() => setInvoiceModal({ open: false, html: "" })}
+            >
+              Close
+            </button>
+            <div dangerouslySetInnerHTML={{ __html: invoiceModal.html }} />
+          </div>
+        </div>
+      )}
     </section>
   );
 } 

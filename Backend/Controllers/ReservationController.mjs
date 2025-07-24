@@ -25,7 +25,7 @@ export const createReservation = async (req, res) => {
     // Check if room is available for the given dates
     const overlapping = await Reservation.findOne({
       room,
-      status: { $ne: "Cancelled" }, // Only consider non-cancelled reservations
+      status: { $ne: "Cancelled", $ne: "Checked Out" }, // Only consider non-cancelled reservations
       $or: [
         { checkin: { $lt: new Date(checkout) }, checkout: { $gt: new Date(checkin) } },
       ],
@@ -174,9 +174,11 @@ export const getAvailableRooms = async (req, res) => {
     if (!checkin || !checkout) {
       return res.status(400).json({ message: 'Check-in and check-out dates are required.' });
     }
-    // Find rooms that are NOT reserved for the given date range
+    // Only reservations that are not Cancelled or Checked Out should block availability.
+    // This means if a reservation is Checked Out (even if its date range overlaps), it will not block new bookings.
+    // Same for Cancelled reservations.
     const reservedRooms = await Reservation.find({
-      status: { $ne: "Cancelled" }, // Only consider non-cancelled reservations
+      status: { $nin: ["Cancelled", "Checked Out"] }, // Ignore Cancelled and Checked Out
       $or: [
         { checkin: { $lt: new Date(checkout) }, checkout: { $gt: new Date(checkin) } },
       ],
@@ -234,11 +236,90 @@ export const checkInReservation = async (req, res) => {
 export const checkOutReservation = async (req, res) => {
   try {
     const { id } = req.params;
-    const reservation = await Reservation.findByIdAndUpdate(id, { status: 'Checked Out' }, { new: true });
+    let reservation = await Reservation.findById(id).populate('room');
     if (!reservation) return res.status(404).json({ message: 'Reservation not found' });
+
+    // Calculate actual stay duration
+    const checkinDate = new Date(reservation.checkin);
+    const now = new Date();
+    now.setHours(0,0,0,0);
+    checkinDate.setHours(0,0,0,0);
+    let nights = Math.ceil((now - checkinDate) / (1000 * 60 * 60 * 24));
+    if (nights < 1) nights = 1;
+
+    // Room rate (ensure number)
+    const roomRate = Number(reservation.room.rate);
+    const roomCharge = nights * roomRate;
+
+    // Extra services (example: spa $50, wakeup $10, airport $30)
+    let extra = 0;
+    let extraDetails = [];
+    if (reservation.additionalServices?.spa) { extra += 50; extraDetails.push({ name: 'Spa', price: 50 }); }
+    if (reservation.additionalServices?.wakeup) { extra += 10; extraDetails.push({ name: 'Wake-up Call', price: 10 }); }
+    if (reservation.additionalServices?.airport) { extra += 30; extraDetails.push({ name: 'Airport Pickup', price: 30 }); }
+
+    // Total
+    const total = roomCharge + extra;
+
+    // Bill breakdown
+    const bill = {
+      nights,
+      roomRate,
+      roomCharge,
+      extraServices: extraDetails,
+      extraTotal: extra,
+      total
+    };
+
+    // Generate invoice HTML
+    const invoiceHtml = `
+      <div style="font-family:Arial,sans-serif;padding:32px;background:#f7f7fa;border-radius:12px;max-width:520px;margin:auto;box-shadow:0 2px 8px #0001;">
+        <h2 style="color:#07be8a;text-align:center;margin-bottom:24px;">Hotel Invoice</h2>
+        <p style="font-size:16px;color:#222;margin-bottom:16px;">Dear <b>${reservation.guestName}</b>,<br>Thank you for staying with us. Here is your invoice:</p>
+        <div style="background:#fff;border-radius:8px;padding:20px 24px;margin-bottom:20px;border:1px solid #eee;">
+          <h3 style="color:#333;margin-bottom:8px;">Room Details</h3>
+          <ul style="list-style:none;padding:0;font-size:15px;">
+            <li><b>Room Name:</b> ${reservation.room.name}</li>
+            <li><b>Type:</b> ${reservation.room.roomType}</li>
+            <li><b>Rate:</b> $${roomRate} / night</li>
+            <li><b>Check-in:</b> ${new Date(reservation.checkin).toLocaleDateString()}</li>
+            <li><b>Check-out:</b> ${now.toLocaleDateString()}</li>
+            <li><b>Nights Stayed:</b> ${nights}</li>
+          </ul>
+        </div>
+        <div style="background:#fff;border-radius:8px;padding:20px 24px;margin-bottom:20px;border:1px solid #eee;">
+          <h3 style="color:#333;margin-bottom:8px;">Charges</h3>
+          <ul style="list-style:none;padding:0;font-size:15px;">
+            <li><b>Room Charge:</b> $${roomCharge}</li>
+            ${extraDetails.length > 0 ? extraDetails.map(e => `<li><b>${e.name}:</b> $${e.price}</li>`).join('') : '<li>No extra services</li>'}
+            <li style="margin-top:8px;"><b>Total:</b> $${total}</li>
+          </ul>
+        </div>
+        <p style="font-size:14px;color:#555;text-align:center;margin-top:24px;">We hope you enjoyed your stay!<br>For any queries, contact us at support@example.com.</p>
+        <hr style="margin:24px 0;"/>
+        <p style="font-size:12px;color:#888;text-align:center;">&copy; ${new Date().getFullYear()} Hotel Reservation System</p>
+      </div>
+    `;
+
+    // Update reservation
+    reservation.status = 'Checked Out';
+    reservation.actualCheckout = now;
+    reservation.bill = bill;
+    reservation.invoiceHtml = invoiceHtml;
+    await reservation.save();
+
     // Update room status
-    await Rooms.findByIdAndUpdate(reservation.room, { status: 'Vacant' });
-    res.status(200).json({ message: 'Checked out successfully', reservation });
+    await Rooms.findByIdAndUpdate(reservation.room._id, { status: 'Vacant' });
+
+    // Email invoice
+    try {
+      await EmailController.sendMail(reservation.guestEmail, 'Your Hotel Invoice', invoiceHtml);
+    } catch (e) {
+      // Log but don't fail checkout
+      console.error('Invoice email error:', e);
+    }
+
+    res.status(200).json({ message: 'Checked out successfully', reservation, invoice: invoiceHtml });
   } catch (error) {
     res.status(500).json({ message: 'Error during check-out', error: error.message });
   }
@@ -266,6 +347,18 @@ export const getReservationByReservationId = async (req, res) => {
   try {
     const { reservationId } = req.params;
     const reservation = await Reservation.findOne({ reservationId }).populate('room');
+    res.status(200).json({ reservation });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching reservation', error: error.message });
+  }
+};
+
+// Get reservation by MongoDB _id
+export const getReservationById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const reservation = await Reservation.findById(id).populate('room');
+    if (!reservation) return res.status(404).json({ message: 'Reservation not found' });
     res.status(200).json({ reservation });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching reservation', error: error.message });
