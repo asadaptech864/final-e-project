@@ -7,6 +7,7 @@ export type PropertyHomes = {
   baths: number
   area: number
   images: PropertyImage[]
+  roomType?: string
 }
 
 interface PropertyImage {

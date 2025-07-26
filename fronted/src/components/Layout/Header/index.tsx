@@ -33,20 +33,44 @@ const Header: React.FC = () => {
   // Get navigation links based on user role
   const navLinks = getNavLinks(userRole);
 
+  // Fetch notifications function
+  const fetchNotifications = useCallback(async () => {
+    if (!session?.user?.id) return;
+    
+    try {
+      const res = await fetch(`http://localhost:3001/notifications/${session.user.id}`);
+      const data = await res.json();
+      if (res.ok) {
+        setNotifications(data.notifications || []);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  }, [session?.user?.id]);
+
   // Mark notification as read
   const handleMarkRead = async (notifId: string) => {
     try {
       await fetch(`http://localhost:3001/notifications/read/${notifId}`, { method: 'PATCH' });
       setNotifications((prev) => prev.map(n => n._id === notifId ? { ...n, read: true } : n));
-    } catch {}
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
 
+  // Initial fetch and polling setup
   useEffect(() => {
     if (!session?.user?.id) return;
-    fetch(`http://localhost:3001/notifications/${session.user.id}`)
-      .then(res => res.json())
-      .then(data => setNotifications(data.notifications || []));
-  }, [session?.user?.id]);
+    
+    // Initial fetch
+    fetchNotifications();
+    
+    // Set up polling every 10 seconds
+    const interval = setInterval(fetchNotifications, 10000);
+    
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
+  }, [session?.user?.id, fetchNotifications]);
 
   const sideMenuRef = useRef<HTMLDivElement>(null)
 
@@ -119,6 +143,7 @@ const Header: React.FC = () => {
                 className='dark:block hidden text-white'
               />
             </button>
+            
             {/* Notification Bell Icon - only show if logged in */}
             {session && (
               <div className="relative">
@@ -132,6 +157,7 @@ const Header: React.FC = () => {
                     <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
                   )}
                 </button>
+                
                 {/* Notification Dropdown */}
                 {notifOpen && (
                   <ul className="absolute right-0 mt-2 w-80 bg-white dark:bg-dark shadow-lg rounded-lg z-50 max-h-96 overflow-auto">
@@ -157,6 +183,7 @@ const Header: React.FC = () => {
                 )}
               </div>
             )}
+            
             <div className={`hidden md:block`}>
               <Link href='#' className={`text-base text-inherit flex items-center gap-2 border-r pr-6 ${isHomepage
                 ? sticky

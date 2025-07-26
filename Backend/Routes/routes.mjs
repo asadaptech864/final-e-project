@@ -8,18 +8,29 @@ import MaintenanceController from '../Controllers/MaintenanceController.mjs';
 import stripeRoutes from './stripeRoutes.mjs';
 import stripeWebhook from './stripeWebhook.mjs';
 import Reservation from '../Modals/ReservationModal.mjs';
-import { getUserNotifications, markNotificationRead } from '../Controllers/UsersController.mjs';
+import { getUserNotifications, markNotificationRead, getUsersByRole, sendNotificationToUser } from '../Controllers/UsersController.mjs';
+import Notification from '../Modals/NotificationModal.mjs';
+import AnalyticsController from '../Controllers/AnalyticsController.mjs';
+import SettingsController from '../Controllers/SettingsController.mjs';
 const router = express.Router();
 
 // Register Stripe routes and webhook BEFORE any dynamic routes
 router.use('/', stripeRoutes);
 router.use('/', stripeWebhook);
 
+// Analytics route
+router.get('/analytics', AnalyticsController.getAnalytics);
+
+// Settings routes
+router.get('/admin/settings', SettingsController.getSettings);
+router.put('/admin/settings/:section', SettingsController.updateSettings);
+router.get('/admin/settings/:section', SettingsController.getSettingsSection);
+
 router
 //rooms routes
 .get("/allrooms", RoomsController.getAllRooms)
 .get("/featured", RoomsController.getFeaturedRoom)
-.get("/:id", RoomsController.getRoom)
+.get("/rooms/:id", RoomsController.getRoom)
 .post("/addroom",upload.array('images', 5), RoomsController.addRoom)
 .delete("/delete/:id", RoomsController.deleteRoom)
 .put("/update/:id", upload.array('images', 5), RoomsController.updateRoom)
@@ -65,6 +76,25 @@ router.post('/reservations/confirm', async (req, res) => {
       { status: 'Confirmed' }
     );
     if (result) {
+      // Create notification for reservation confirmation
+      try {
+        await Notification.create({
+          userId: result.guestId,
+          type: 'reservation',
+          message: `Reservation ${reservationId} confirmed! Payment successful.`,
+          data: { 
+            reservationId, 
+            status: 'Confirmed',
+            roomId: result.room,
+            checkin: result.checkin,
+            checkout: result.checkout,
+            price: result.price
+          },
+        });
+      } catch (e) {
+        console.error('Notification creation error:', e);
+      }
+      
       res.json({ message: 'Reservation confirmed' });
     } else {
       res.status(404).json({ message: 'Reservation not found' });
@@ -77,5 +107,7 @@ router.post('/reservations/confirm', async (req, res) => {
 router.post('/reservations/send-confirmation-email', sendReservationConfirmationEmail);
 router.get('/notifications/:userId', getUserNotifications);
 router.patch('/notifications/read/:notificationId', markNotificationRead);
+router.get('/users/role/:role', getUsersByRole);
+router.post('/notifications/send', sendNotificationToUser);
 
 export default router;

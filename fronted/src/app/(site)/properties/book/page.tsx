@@ -8,6 +8,8 @@ import { MappedRoom } from "@/hooks/useRooms";
 import { useSearchParams } from "next/navigation";
 import { Dialog } from "@headlessui/react";
 import { useRole } from "@/hooks/useRole";
+import { useSystemSettings } from "@/hooks/useSystemSettings";
+import { calculateTotalPrice, getCurrentRoomRate, formatCurrency, calculateRoomRate } from "@/lib/roomPricing";
 export default function BookPage() {
   const { rooms, loading } = useRooms();
   const { data: session } = useSession();
@@ -15,6 +17,7 @@ export default function BookPage() {
   const searchParams = useSearchParams();
   const urlRoomId = searchParams.get("room");
   const { userRole } = useRole();
+  const { settings: systemSettings } = useSystemSettings();
 
   // Helper to format date in Pakistan Standard Time (UTC+5)
   function formatDatePakistan(date) {
@@ -139,12 +142,101 @@ export default function BookPage() {
     const d2 = new Date(dates.checkout);
     return Math.max(1, Math.ceil((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)));
   };
+
+  // Calculate detailed breakdown of costs
+  const getDetailedBreakdown = (room: any) => {
+    const nights = getNights();
+    
+    // Calculate room amount (nights × rate, not multiplied by guests)
+    let roomAmount = 0;
+    if (systemSettings && room.roomType) {
+      // Use dynamic pricing for each night
+      const currentDate = new Date(dates.checkin);
+      for (let i = 0; i < nights; i++) {
+        const nightlyRate = calculateRoomRate(room.roomType, new Date(currentDate), systemSettings);
+        roomAmount += nightlyRate;
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    } else {
+      // Fallback to original calculation
+      roomAmount = Number(room.rate) * nights;
+    }
+    
+    // Calculate additional services
+    let servicesAmount = 0;
+    const servicesBreakdown: Array<{ name: string; amount: number }> = [];
+    
+    if (additionalServices.spa) {
+      servicesAmount += 50;
+      servicesBreakdown.push({ name: 'Spa Appointment', amount: 50 });
+    }
+    if (additionalServices.airport) {
+      servicesAmount += 30;
+      servicesBreakdown.push({ name: 'Airport Pickup', amount: 30 });
+    }
+    if (additionalServices.wakeup) {
+      servicesAmount += 10;
+      servicesBreakdown.push({ name: 'Wake-up Call', amount: 10 });
+    }
+    
+    // Calculate tax from settings
+    let taxAmount = 0;
+    const taxBreakdown: Array<{ name: string; amount: number }> = [];
+    if (systemSettings && systemSettings.taxes) {
+      const taxes = systemSettings.taxes;
+      const subtotal = roomAmount + servicesAmount;
+      
+      if (taxes.taxRate) {
+        const taxRate = taxes.taxRate;
+        taxAmount += (subtotal * taxRate) / 100;
+        taxBreakdown.push({ name: `Tax (${taxRate}%)`, amount: (subtotal * taxRate) / 100 });
+      }
+      if (taxes.serviceCharge) {
+        taxAmount += taxes.serviceCharge;
+        taxBreakdown.push({ name: 'Service Charge', amount: taxes.serviceCharge });
+      }
+      if (taxes.cityTax) {
+        taxAmount += taxes.cityTax;
+        taxBreakdown.push({ name: 'City Tax', amount: taxes.cityTax });
+      }
+      if (taxes.stateTax) {
+        taxAmount += taxes.stateTax;
+        taxBreakdown.push({ name: 'State Tax', amount: taxes.stateTax });
+      }
+    }
+    
+    const total = roomAmount + servicesAmount + taxAmount;
+    
+    return {
+      roomAmount,
+      servicesAmount,
+      servicesBreakdown,
+      taxAmount,
+      taxBreakdown,
+      total,
+      nights
+    };
+  };
+
   const getTotal = (room: any) => {
-    let total = Number(room.rate) * getNights() * modalGuests;
-    if (additionalServices.spa) total += 50;
-    if (additionalServices.airport) total += 30;
-    if (additionalServices.wakeup) total += 10;
-    return total;
+    // Use system settings for pricing if available, otherwise fallback to room.rate
+    if (systemSettings && room.roomType) {
+      return calculateTotalPrice(
+        room.roomType,
+        new Date(dates.checkin),
+        new Date(dates.checkout),
+        1, // Don't multiply by guests for room amount
+        additionalServices,
+        systemSettings
+      );
+    } else {
+      // Fallback to original calculation
+      let total = Number(room.rate) * getNights(); // Not multiplied by guests
+      if (additionalServices.spa) total += 50;
+      if (additionalServices.airport) total += 30;
+      if (additionalServices.wakeup) total += 10;
+      return total;
+    }
   };
 
   // Only allow guest and receptionist to book
@@ -172,27 +264,32 @@ export default function BookPage() {
     setError("");
     setSuccessMsg("");
     try {
-      const total = getTotal(modalRoom);
+      const breakdown = getDetailedBreakdown(modalRoom);
+      const total = breakdown.total;
+      
       // 1. Create reservation first (now includes price)
-      const reservationRes = await fetch("http://localhost:3001/reservations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const reservationData = {
           room: (modalRoom as any)._id || (modalRoom as any).slug,
           guestName: userRole === "receptionist" ? recGuestName : session.user.name,
           guestEmail: userRole === "receptionist" ? recGuestEmail : session.user.email,
-          guestId: session.user.id,
+        guestId: session.user.id,
           guestPhone: userRole === "guest" ? guestPhone : recGuestPhone,
           checkin: dates.checkin,
           checkout: dates.checkout,
           guests: modalGuests,
-          additionalServices,
-          price: total,
-          role: userRole, // Send user role to backend
-        }),
+        additionalServices,
+        price: total,
+        role: userRole, // Send user role to backend
+      };
+      
+      const reservationRes = await fetch("http://localhost:3001/reservations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(reservationData),
       });
-      const reservationData = await reservationRes.json();
-      if (!reservationRes.ok) throw new Error(reservationData.message || "Failed to create reservation");
+      const reservationResult = await reservationRes.json();
+      if (!reservationRes.ok) throw new Error(reservationResult.message || "Failed to create reservation");
+      
       if (userRole === "guest") {
         // 2. Create Stripe session, pass reservationId
         const stripeRes = await fetch("http://localhost:3001/create-checkout-session", {
@@ -200,7 +297,7 @@ export default function BookPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             amount: total,
-            reservationId: reservationData.reservation.reservationId,
+            reservationId: reservationResult.reservation.reservationId,
           }),
         });
         const stripeData = await stripeRes.json();
@@ -305,7 +402,12 @@ export default function BookPage() {
                 <h2 className="text-xl font-semibold text-dark dark:text-white mb-1">{room.name}</h2>
                 <p className="text-dark/60 dark:text-white/60 mb-1">{room.roomType}</p>
                 <p className="text-dark/60 dark:text-white/60 mb-1">{room.beds} Beds • {room.baths} Baths • {room.area}m²</p>
-                <p className="text-primary font-bold text-lg mb-2">${room.rate} / night</p>
+                <p className="text-primary font-bold text-lg mb-2">
+                  {systemSettings && room.roomType 
+                    ? formatCurrency(getCurrentRoomRate(room.roomType, systemSettings), systemSettings) + ' / night'
+                    : `${room.rate} / night`
+                  }
+                </p>
                 {/* Show room status */}
                 <div className="mb-2">Status: {getStatusLabel(room.status || "Unknown")}</div>
                 {checked && (
@@ -396,7 +498,7 @@ export default function BookPage() {
                   <div className="mb-2 text-dark dark:text-white">
                     <b>Room:</b> {modalRoom.name}<br />
                     <b>Type:</b> {modalRoom.roomType}<br />
-                    <b>Rate:</b> ${modalRoom.rate} / night<br />
+                    <b>Rate:</b> {modalRoom.rate} / night<br />
                     <b>Guests:</b> {modalGuests}<br />
                     <b>Check-in:</b> {dates.checkin}<br />
                     <b>Check-out:</b> {dates.checkout}<br />
@@ -424,8 +526,59 @@ export default function BookPage() {
                       </label>
                     </div>
                   </div>
-                  <div className="mb-4 text-lg font-bold text-primary">
-                    Total: ${getTotal(modalRoom)}
+                  {/* Detailed Amount Breakdown */}
+                  <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <h3 className="font-bold text-dark dark:text-white mb-3">Amount Breakdown</h3>
+                    {(() => {
+                      const breakdown = getDetailedBreakdown(modalRoom);
+                      return (
+                        <div className="space-y-2 text-sm">
+                          {/* Room Amount */}
+                          <div className="flex justify-between">
+                            <span className="text-dark dark:text-white">
+                              Room ({breakdown.nights} nights):
+                            </span>
+                            <span className="font-semibold text-dark dark:text-white">
+                              ${breakdown.roomAmount.toFixed(2)}
+                            </span>
+                          </div>
+                          
+                          {/* Additional Services */}
+                          {breakdown.servicesBreakdown.length > 0 && (
+                            <>
+                              <div className="text-dark dark:text-white font-medium">Additional Services:</div>
+                              {breakdown.servicesBreakdown.map((service, index) => (
+                                <div key={index} className="flex justify-between ml-4">
+                                  <span className="text-dark dark:text-white">{service.name}:</span>
+                                  <span className="font-semibold text-dark dark:text-white">${service.amount.toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </>
+                          )}
+                          
+                          {/* Tax Breakdown */}
+                          {breakdown.taxBreakdown.length > 0 && (
+                            <>
+                              <div className="text-dark dark:text-white font-medium">Taxes & Charges:</div>
+                              {breakdown.taxBreakdown.map((tax, index) => (
+                                <div key={index} className="flex justify-between ml-4">
+                                  <span className="text-dark dark:text-white">{tax.name}:</span>
+                                  <span className="font-semibold text-dark dark:text-white">${tax.amount.toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </>
+                          )}
+                          
+                          {/* Total */}
+                          <div className="border-t border-gray-300 dark:border-gray-600 pt-2 mt-3">
+                            <div className="flex justify-between text-lg font-bold text-primary">
+                              <span>Total:</span>
+                              <span>${breakdown.total.toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                   {/* Role-based fields */}
                   {userRole === "guest" && (
@@ -434,6 +587,7 @@ export default function BookPage() {
                       <input
                         type="tel"
                         value={guestPhone}
+                        required
                         onChange={e => setGuestPhone(e.target.value)}
                         className="px-3 py-2 border border-black/10 dark:border-white/10 rounded-full outline-primary focus:outline w-full mb-2"
                         placeholder="Enter your phone number"
@@ -448,6 +602,7 @@ export default function BookPage() {
                           type="text"
                           value={recGuestName}
                           onChange={e => setRecGuestName(e.target.value)}
+                          required
                           className="px-3 py-2 border border-black/10 dark:border-white/10 rounded-full outline-primary focus:outline w-full mb-2"
                           placeholder="Enter guest name"
                         />
@@ -458,6 +613,7 @@ export default function BookPage() {
                           type="email"
                           value={recGuestEmail}
                           onChange={e => setRecGuestEmail(e.target.value)}
+                          required
                           className="px-3 py-2 border border-black/10 dark:border-white/10 rounded-full outline-primary focus:outline w-full mb-2"
                           placeholder="Enter guest email"
                         />
@@ -468,6 +624,7 @@ export default function BookPage() {
                           type="tel"
                           value={recGuestPhone}
                           onChange={e => setRecGuestPhone(e.target.value)}
+                          required
                           className="px-3 py-2 border border-black/10 dark:border-white/10 rounded-full outline-primary focus:outline w-full mb-2"
                           placeholder="Enter guest phone number"
                         />

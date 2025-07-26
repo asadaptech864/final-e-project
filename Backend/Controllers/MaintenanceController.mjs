@@ -6,10 +6,84 @@ import Notification from '../Modals/NotificationModal.mjs';
 
     
 const createMaintenanceRequest = async (req, res) => {
-    const { room, description, urgency, location, allowAccess, issueType, reportedBy } = req.body;
-    const maintenance = new Maintenance({ room, description, urgency, location, allowAccess, issueType, reportedBy });
-    await maintenance.save();
-    res.status(201).json(maintenance);
+    try {
+        const { room, description, urgency, location, allowAccess, issueType, reportedBy } = req.body;
+        const maintenance = new Maintenance({ room, description, urgency, location, allowAccess, issueType, reportedBy });
+        await maintenance.save();
+        
+        // Populate the maintenance request with room and reporter details for email
+        const populatedMaintenance = await Maintenance.findById(maintenance._id)
+            .populate('room')
+            .populate('reportedBy');
+        
+        // Send email to the reporter
+        if (populatedMaintenance.reportedBy && populatedMaintenance.reportedBy.email) {
+            const html = `
+                <div style="font-family:Arial,sans-serif;padding:24px;background:#f7f7fa;border-radius:12px;max-width:520px;margin:auto;box-shadow:0 2px 8px #0001;">
+                    <h2 style="color:#2563eb;text-align:center;margin-bottom:24px;">Maintenance Request Submitted</h2>
+                    <p style="font-size:16px;color:#222;margin-bottom:16px;">Dear <b>${populatedMaintenance.reportedBy.name}</b>,<br>Your maintenance request has been successfully submitted. Here are the details:</p>
+                    <div style="background:#fff;border-radius:8px;padding:20px 24px;margin-bottom:20px;border:1px solid #eee;">
+                        <h3 style="color:#333;margin-bottom:8px;">Room Details</h3>
+                        <ul style="list-style:none;padding:0;font-size:15px;">
+                            <li><b>Room Name:</b> ${populatedMaintenance.room.name}</li>
+                            <li><b>Type:</b> ${populatedMaintenance.room.roomType}</li>
+                            <li><b>Beds:</b> ${populatedMaintenance.room.beds}</li>
+                            <li><b>Baths:</b> ${populatedMaintenance.room.baths}</li>
+                            <li><b>Area:</b> ${populatedMaintenance.room.area} m²</li>
+                        </ul>
+                    </div>
+                    <div style="background:#fff;border-radius:8px;padding:20px 24px;margin-bottom:20px;border:1px solid #eee;">
+                        <h3 style="color:#333;margin-bottom:8px;">Maintenance Request Details</h3>
+                        <ul style="list-style:none;padding:0;font-size:15px;">
+                            <li><b>Description:</b> ${populatedMaintenance.description}</li>
+                            <li><b>Urgency:</b> ${populatedMaintenance.urgency}</li>
+                            <li><b>Location:</b> ${populatedMaintenance.location}</li>
+                            <li><b>Issue Type:</b> ${populatedMaintenance.issueType}</li>
+                            <li><b>Allow Access:</b> ${populatedMaintenance.allowAccess ? 'Yes' : 'No'}</li>
+                            <li><b>Status:</b> Pending</li>
+                        </ul>
+                    </div>
+                    <p style="font-size:14px;color:#555;text-align:center;margin-top:24px;">We will review your request and assign it to our maintenance team.<br>You will receive updates on the status of your request.</p>
+                    <hr style="margin:24px 0;"/>
+                    <p style="font-size:12px;color:#888;text-align:center;">&copy; ${new Date().getFullYear()} Hotel Maintenance System</p>
+                </div>
+            `;
+            
+            try {
+                await EmailController.sendMail(
+                    populatedMaintenance.reportedBy.email,
+                    'Maintenance Request Submitted Successfully',
+                    html
+                );
+            } catch (e) {
+                console.error('Maintenance request email error:', e);
+            }
+        }
+        
+        // Create notification for the reporter
+        try {
+            await Notification.create({
+                userId: reportedBy,
+                type: 'maintenance',
+                message: `Maintenance request submitted successfully for room ${populatedMaintenance.room.name}. Status: Pending`,
+                data: { 
+                    maintenanceId: maintenance._id, 
+                    roomId: room, 
+                    status: 'Pending',
+                    description,
+                    urgency,
+                    issueType
+                },
+            });
+        } catch (e) {
+            console.error('Notification creation error:', e);
+        }
+        
+        res.status(201).json(maintenance);
+    } catch (error) {
+        console.error('Maintenance request creation error:', error);
+        res.status(500).json({ message: 'Error creating maintenance request', error: error.message });
+    }
 };
 
 const getAllMaintenanceRequests = async (req, res) => {

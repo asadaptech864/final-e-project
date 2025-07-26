@@ -239,6 +239,56 @@ export const markNotificationRead = async (req, res) => {
     res.status(500).json({ message: 'Error updating notification', error: error.message });
   }
 };
+
+// Get users by role
+export const getUsersByRole = async (req, res) => {
+  try {
+    const { role } = req.params;
+    const users = await Users.find({ role, isActive: true }).select('name email role');
+    res.status(200).json({ users });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching users by role', error: error.message });
+  }
+};
+
+// Send notification to specific user
+export const sendNotificationToUser = async (req, res) => {
+  try {
+    const { userId, message, type, data } = req.body;
+    
+    // Create notification
+    const notification = await Notification.create({
+      userId,
+      type: type || 'admin',
+      message,
+      data: data || {}
+    });
+
+    // Get user details for email
+    const user = await Users.findById(userId);
+    if (user && user.email) {
+      // Send email notification
+      const html = `
+        <div style="font-family:Arial,sans-serif;padding:32px;background:#f7f7fa;border-radius:12px;max-width:520px;margin:auto;box-shadow:0 2px 8px #0001;">
+          <h2 style="color:#07be8a;text-align:center;margin-bottom:24px;">System Notification</h2>
+          <p style="font-size:16px;color:#222;margin-bottom:16px;">Dear <b>${user.name}</b>,</p>
+          <div style="background:#fff;border-radius:8px;padding:20px 24px;margin-bottom:20px;border:1px solid #eee;">
+            <p style="font-size:15px;color:#333;line-height:1.6;">${message}</p>
+          </div>
+          <p style="font-size:14px;color:#555;text-align:center;margin-top:24px;">Please check your dashboard for more details.</p>
+          <hr style="margin:24px 0;"/>
+          <p style="font-size:12px;color:#888;text-align:center;">&copy; ${new Date().getFullYear()} Hotel Management System</p>
+        </div>
+      `;
+      
+      await EmailController.sendMail(user.email, 'System Notification - Hotel Management', html);
+    }
+
+    res.status(200).json({ message: 'Notification sent successfully', notification });
+  } catch (error) {
+    res.status(500).json({ message: 'Error sending notification', error: error.message });
+  }
+};
   
     const UserController = {addUser, LoginUser, auth, getAllUsers, deleteuser, deactivateAndActivateUser, editUser, getUserById, getAllMaintenanceUsers};
     export default UserController;

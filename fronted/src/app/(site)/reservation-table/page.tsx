@@ -284,7 +284,7 @@ export default function ReservationTablePage() {
                           </Link>
                         </>
                       )}
-                      {userRole === 'guest' && r.status === 'Checked Out' && (
+                      {(userRole === 'guest' || userRole === 'receptionist') && r.status === 'Checked Out' && (
                         <>
                           <span className="text-green-700 font-semibold">Reservation Completed</span>
                           <button
@@ -312,8 +312,6 @@ export default function ReservationTablePage() {
                         }>
                           {r.status === 'Cancelled'
                             ? `Reservation cancelled by ${r.cancelledBy?.name || 'Unknown'} (${r.cancelledBy?.role || 'role'})`
-                            : r.status === 'Checked Out'
-                            ? 'Reservation completed'
                             : r.status === 'Checked In'
                             ? 'Checked In'
                             : r.status === 'Confirmed'

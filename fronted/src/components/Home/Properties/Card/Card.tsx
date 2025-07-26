@@ -2,9 +2,12 @@ import { PropertyHomes } from '@/types/properyHomes'
 import { Icon } from '@iconify/react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useSystemSettings } from '@/hooks/useSystemSettings'
+import { getCurrentRoomRate, formatCurrency } from '@/lib/roomPricing'
 
 const PropertyCard: React.FC<{ item: PropertyHomes }> = ({ item }) => {
-  const { name, location, rate, beds, baths, area, slug, images } = item
+  const { name, location, rate, beds, baths, area, slug, images, roomType } = item
+  const { settings: systemSettings } = useSystemSettings()
 
   const mainImage = images[0]?.src;
 
@@ -47,7 +50,10 @@ const PropertyCard: React.FC<{ item: PropertyHomes }> = ({ item }) => {
             </div>
             <div>
               <button className='text-base font-normal text-primary px-5 py-2 rounded-full bg-primary/10'>
-                ${rate}
+                {systemSettings && roomType 
+                  ? formatCurrency(getCurrentRoomRate(roomType, systemSettings), systemSettings)
+                  : `${rate}`
+                }
               </button>
             </div>
           </div>

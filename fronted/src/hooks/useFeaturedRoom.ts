@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useSystemSettings } from './useSystemSettings';
+import { getCurrentRoomRate, formatCurrency } from '@/lib/roomPricing';
 
 // Define the backend room structure
 export interface BackendRoom {
@@ -35,6 +37,7 @@ export const useFeaturedRoom = () => {
   const [featuredRoom, setFeaturedRoom] = useState<FeaturedRoom | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { settings: systemSettings } = useSystemSettings();
 
   useEffect(() => {
     const fetchFeaturedRoom = async () => {
@@ -46,12 +49,22 @@ export const useFeaturedRoom = () => {
         const data = await response.json();
         
         if (data.room) {
+          // Calculate dynamic rate based on room type and system settings
+          let dynamicRate: string;
+          if (systemSettings && data.room.roomType) {
+            const calculatedRate = getCurrentRoomRate(data.room.roomType, systemSettings);
+            dynamicRate = formatCurrency(calculatedRate, systemSettings);
+          } else {
+            // Fallback to original rate if settings or roomType not available
+            dynamicRate = data.room.rate;
+          }
+
           // Map backend data to frontend structure
           const mappedRoom: FeaturedRoom = {
             id: data.room._id,
             name: data.room.name,
             description: data.room.description,
-            rate: data.room.rate,
+            rate: dynamicRate,
             beds: data.room.beds,
             baths: data.room.baths,
             area: data.room.area,
@@ -70,7 +83,7 @@ export const useFeaturedRoom = () => {
     };
 
     fetchFeaturedRoom();
-  }, []);
+  }, [systemSettings]);
 
   return { featuredRoom, loading, error };
 }; 

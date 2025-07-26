@@ -1,6 +1,7 @@
 import Reservation from '../Modals/ReservationModal.mjs';
 import Rooms from '../Modals/RoomsModal.mjs';
 import EmailController from './EmailController.mjs';
+import Notification from '../Modals/NotificationModal.mjs';
 
 // Create a reservation
 export const createReservation = async (req, res) => {
@@ -40,6 +41,26 @@ export const createReservation = async (req, res) => {
     const status = role === 'receptionist' ? 'Confirmed' : undefined;
     const reservation = new Reservation({ room, guestName, guestEmail, guestPhone, guestId, checkin, checkout, guests, additionalServices, reservationId, price, status });
     await reservation.save();
+    
+    // Create notification for reservation creation
+    try {
+      await Notification.create({
+        userId: guestId,
+        type: 'reservation',
+        message: `Reservation ${reservationId} created successfully. ${role === 'receptionist' ? 'Status: Confirmed' : 'Status: Pending - Payment required'}`,
+        data: { 
+          reservationId, 
+          status: status || 'Pending',
+          roomId: room,
+          checkin,
+          checkout,
+          price
+        },
+      });
+    } catch (e) {
+      console.error('Notification creation error:', e);
+    }
+    
     // Populate room details for email
     const populatedReservation = await Reservation.findById(reservation._id).populate('room');
     // Compose HTML email (reuse logic below)
@@ -311,6 +332,24 @@ export const checkOutReservation = async (req, res) => {
     // Update room status
     await Rooms.findByIdAndUpdate(reservation.room._id, { status: 'Vacant' });
 
+    // Create notification for checkout
+    try {
+      await Notification.create({
+        userId: reservation.guestId,
+        type: 'reservation',
+        message: `Checkout completed for reservation ${reservation.reservationId}. Total amount: $${total}`,
+        data: { 
+          reservationId: reservation.reservationId, 
+          status: 'Checked Out',
+          roomId: reservation.room._id,
+          total,
+          bill
+        },
+      });
+    } catch (e) {
+      console.error('Checkout notification error:', e);
+    }
+
     // Email invoice
     try {
       await EmailController.sendMail(reservation.guestEmail, 'Your Hotel Invoice', invoiceHtml);
@@ -334,8 +373,27 @@ export const cancelReservation = async (req, res) => {
       id,
       { status: 'Cancelled', cancelledBy: { userId, name, role } },
       { new: true }
-    );
+    ).populate('room');
+    
     if (!reservation) return res.status(404).json({ message: 'Reservation not found' });
+
+    // Create notification for cancellation
+    try {
+      await Notification.create({
+        userId: reservation.guestId,
+        type: 'reservation',
+        message: `Reservation ${reservation.reservationId} has been cancelled by ${name} (${role})`,
+        data: { 
+          reservationId: reservation.reservationId, 
+          status: 'Cancelled',
+          roomId: reservation.room._id,
+          cancelledBy: { userId, name, role }
+        },
+      });
+    } catch (e) {
+      console.error('Cancellation notification error:', e);
+    }
+
     res.status(200).json({ message: 'Reservation cancelled', reservation });
   } catch (error) {
     res.status(500).json({ message: 'Error cancelling reservation', error: error.message });

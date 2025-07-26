@@ -7,11 +7,14 @@ import { testimonials } from '@/app/api/testimonial';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRooms } from '@/hooks/useRooms';
+import { useSystemSettings } from '@/hooks/useSystemSettings';
+import { getCurrentRoomRate, formatCurrency } from '@/lib/roomPricing';
 
 export default function Details() {
     const { slug } = useParams();
 
     const { rooms } = useRooms();
+    const { settings: systemSettings } = useSystemSettings();
     const item = rooms.find((item) => item.slug === slug);
 
     return (
@@ -186,7 +189,10 @@ export default function Details() {
                     <div className="lg:col-span-4 col-span-12">
                         <div className="bg-primary/10 p-8 rounded-2xl relative z-10 overflow-hidden">
                             <h4 className='text-dark text-3xl font-medium dark:text-white'>
-                              ${item?.rate}
+                              {systemSettings && item?.roomType 
+                                ? formatCurrency(getCurrentRoomRate(item.roomType, systemSettings), systemSettings)
+                                : `$${item?.rate}`
+                              }
                             </h4>
                             <p className='text-sm text-dark/50 dark:text-white'>Room Price per Day</p>
                             <Link href={`/properties/book?room=${item?.slug}`} className='py-4 px-8 bg-primary text-white rounded-full w-full block text-center hover:bg-dark duration-300 text-base mt-8 hover:cursor-pointer'>

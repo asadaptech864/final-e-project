@@ -22,6 +22,8 @@ export const adminNavLinks: NavLinks[] = [
   { label: 'Rooms', href: '/rooms-table' },
   { label: 'Room Types', href: '/roomtype-table' },
   { label: 'Staffs', href: '/staff-table' },
+  { label: 'Analytics', href: '/analytics' },
+  { label: 'Settings', href: '/admin/settings' },
 ]
 //  Manager specific links
 export const managerNavLinks: NavLinks[] = [
@@ -29,6 +31,7 @@ export const managerNavLinks: NavLinks[] = [
   { label: 'Rooms', href: '/rooms-table' },
   { label: 'Room Types', href: '/roomtype-table' },
   { label: 'Maintenances', href: '/maintenance-requests' },
+  { label: 'Analytics', href: '/analytics' },
 ]
 
 // Receptionist specific links

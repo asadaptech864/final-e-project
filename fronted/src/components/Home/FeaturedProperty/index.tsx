@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useFeaturedRoom } from "@/hooks/useFeaturedRoom";
 import { Icon } from "@iconify/react";
+import { useSystemSettings } from "@/hooks/useSystemSettings";
+import { getCurrentRoomRate, formatCurrency } from "@/lib/roomPricing";
 import {
   Carousel,
   CarouselContent,
@@ -13,6 +15,7 @@ import {
 
 const FeaturedProperty: React.FC = () => {
   const { featuredRoom, loading, error } = useFeaturedRoom();
+  const { settings: systemSettings } = useSystemSettings();
   const [api, setApi] = React.useState<CarouselApi | undefined>(undefined);
   const [current, setCurrent] = React.useState(0);
   const [count, setCount] = React.useState(0);
@@ -208,7 +211,10 @@ const FeaturedProperty: React.FC = () => {
               </Link>
               <div>
                 <h4 className="text-3xl text-dark dark:text-white font-medium">
-                  ${featuredRoom.rate}
+                  {systemSettings && featuredRoom.roomType 
+                    ? formatCurrency(getCurrentRoomRate(featuredRoom.roomType, systemSettings), systemSettings)
+                    : `$${featuredRoom.rate}`
+                  }
                 </h4>
                 <p className="text-base text-dark/50">
                   Per night
