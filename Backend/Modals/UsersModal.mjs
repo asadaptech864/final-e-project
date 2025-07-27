@@ -21,6 +21,22 @@ const UserSchema = new Schema({
     enum: ['guest', 'receptionist', 'housekeeping', 'manager', 'maintenance', 'admin'],
     default: 'guest'
   },
+  phone: {
+    type: String,
+    trim: true
+  },
+  address: {
+    type: String,
+    trim: true
+  },
+  gender: {
+    type: String,
+    enum: ['male', 'female', 'other', 'prefer-not-to-say'],
+    trim: true
+  },
+  profilePic: {
+    type: String
+  },
   isActive: {
     type: Boolean,
     default: true

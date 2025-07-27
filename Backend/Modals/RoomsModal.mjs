@@ -11,7 +11,7 @@ const roomSchema = new Schema({
   },
   rate: {
     type: String,
-    required: [true, "rate is required"],
+    default: "0",
   },
   beds: {
     type: Number,

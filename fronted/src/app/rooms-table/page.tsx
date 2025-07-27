@@ -131,21 +131,33 @@ const RoomsTablePage = () => {
                       )}
                     </td>
                     <td className="px-4 py-2 border">
-                      {userRole === 'housekeeping' ? (
+                      {userRole === 'housekeeping' || userRole === 'manager' ? (
                         <select
                           value={room.status}
                           onChange={e => handleStatusChange(room.slug, e.target.value)}
                           className="border rounded px-2 py-1"
                         >
-                          <option value="Vacant">Vacant</option>
+                          <option value="Available">Available</option>
                           <option value="Occupied">Occupied</option>
                           <option value="Clean">Clean</option>
-                          <option value="Cleaning">Cleaning</option>
                           <option value="Dirty">Dirty</option>
                           <option value="Maintenance">Maintenance</option>
+                          <option value="Cleaning">Cleaning</option>
                         </select>
                       ) : (
                         <div className="flex gap-2">
+                           <select
+                          value={room.status}
+                          onChange={e => handleStatusChange(room.slug, e.target.value)}
+                          className="border rounded px-2 py-1"
+                        >
+                          <option value="Available">Available</option>
+                          <option value="Occupied">Occupied</option>
+                          <option value="Clean">Clean</option>
+                          <option value="Dirty">Dirty</option>
+                          <option value="Maintenance">Maintenance</option>
+                          <option value="Cleaning">Cleaning</option>
+                        </select>
                           <button
                             onClick={() => handleEdit(room)}
                             className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"

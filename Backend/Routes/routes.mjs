@@ -3,7 +3,7 @@ import RoomsController from '../Controllers/RoomsControllers.mjs';
 import RoomTypeController from '../Controllers/RoomTypes.mjs';
 import { upload } from '../cloudinaryconfig.mjs';
 import UserController from '../Controllers/UsersController.mjs';
-import { createReservation, getAvailableRooms, getReservationsByGuest, getAllReservations, checkInReservation, checkOutReservation, cancelReservation, getReservationByReservationId, sendReservationConfirmationEmail, getReservationById } from '../Controllers/ReservationController.mjs';
+import { createReservation, getAvailableRooms, getReservationsByGuest, getAllReservations, checkInReservation, checkOutReservation, cancelReservation, getReservationByReservationId, sendReservationConfirmationEmail, getReservationById, testDateFiltering } from '../Controllers/ReservationController.mjs';
 import MaintenanceController from '../Controllers/MaintenanceController.mjs';
 import stripeRoutes from './stripeRoutes.mjs';
 import stripeWebhook from './stripeWebhook.mjs';
@@ -18,8 +18,9 @@ const router = express.Router();
 router.use('/', stripeRoutes);
 router.use('/', stripeWebhook);
 
-// Analytics route
+// Analytics routes
 router.get('/analytics', AnalyticsController.getAnalytics);
+router.get('/test-reservations', AnalyticsController.testReservations);
 
 // Settings routes
 router.get('/admin/settings', SettingsController.getSettings);
@@ -49,6 +50,7 @@ router
 .patch("/deactivate/:id", UserController.deactivateAndActivateUser)
 .patch("/activate/:id", UserController.deactivateAndActivateUser)
 .patch("/edituser/:id", UserController.editUser)
+.put("/users/:id", UserController.updateUserProfile)
 .get("/users/:id", UserController.getUserById)
 .get('/maintenance/users', UserController.getAllMaintenanceUsers)
 //maintenance routes
@@ -67,6 +69,7 @@ router.patch('/reservations/:id/checkin', checkInReservation);
 router.patch('/reservations/:id/checkout', checkOutReservation);
 router.patch('/reservations/:id/cancel', cancelReservation);
 router.get('/reservations/:reservationId', getReservationByReservationId);
+router.get('/test-date-filtering', testDateFiltering);
 router.post('/reservations/confirm', async (req, res) => {
   const { reservationId } = req.body;
   if (!reservationId) return res.status(400).json({ message: 'reservationId required' });
@@ -109,5 +112,21 @@ router.get('/notifications/:userId', getUserNotifications);
 router.patch('/notifications/read/:notificationId', markNotificationRead);
 router.get('/users/role/:role', getUsersByRole);
 router.post('/notifications/send', sendNotificationToUser);
+
+// Upload endpoint for profile pictures
+router.post('/upload', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file provided' });
+    }
+    res.status(200).json({ 
+      message: 'Image uploaded successfully',
+      imageUrl: req.file.path 
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ message: 'Error uploading image' });
+  }
+});
 
 export default router;

@@ -174,6 +174,40 @@ let editUser=async(req,res)=>{
         res.status(500).json({message:"Internal server error"});
     }
 }
+
+// Update user profile
+let updateUserProfile=async(req,res)=>{
+    try {
+        let id=req.params.id;
+        const { name, phone, address, gender, profilePic } = req.body;
+        
+        // Only allow updating specific fields for profile
+        const updateData = {};
+        if (name) updateData.name = name;
+        if (phone !== undefined) updateData.phone = phone;
+        if (address !== undefined) updateData.address = address;
+        if (gender !== undefined) updateData.gender = gender;
+        if (profilePic !== undefined) updateData.profilePic = profilePic;
+        
+        let updatedUser = await Users.findByIdAndUpdate(
+            id, 
+            updateData, 
+            { new: true, runValidators: true }
+        );
+        
+        if(!updatedUser){
+            res.status(404).json({message:"User not found"});
+        }else{
+            res.status(200).json({
+                message:"Profile updated successfully",
+                user: updatedUser
+            });
+        }
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({message:"Internal server error"});
+    }
+}
 // deactivate user
 let deactivateAndActivateUser=async(req,res)=>{
     try {
@@ -290,5 +324,5 @@ export const sendNotificationToUser = async (req, res) => {
   }
 };
   
-    const UserController = {addUser, LoginUser, auth, getAllUsers, deleteuser, deactivateAndActivateUser, editUser, getUserById, getAllMaintenanceUsers};
+    const UserController = {addUser, LoginUser, auth, getAllUsers, deleteuser, deactivateAndActivateUser, editUser, getUserById, getAllMaintenanceUsers, updateUserProfile};
     export default UserController;

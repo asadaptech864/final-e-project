@@ -14,7 +14,7 @@ const page = () => {
                 description="Discover comfort and style in our Standard Rooms, thoughtfully designed for a relaxing and enjoyable stay."
                 badge="Rooms"
             />
-            <Appartment roomType="standard room"/>
+            <Appartment roomType="Standard Room"/>
         </>
     );
 };

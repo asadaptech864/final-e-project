@@ -24,7 +24,7 @@ export const useRoomTypes = () => {
   const fetchRoomTypes = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3001/roomtypes/limited');
+      const response = await fetch('http://localhost:3001/roomtypes/allroomtype');
       if (!response.ok) {
         throw new Error('Failed to fetch room types');
       }

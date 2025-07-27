@@ -72,7 +72,7 @@ export default function BookPage() {
     setSelectedRoom(null);
     setError("");
     setSuccessMsg("");
-    // Validate check-out date
+    // Validate check-out date - must be equal to or greater than check-in
     if (dates.checkout < dates.checkin) {
       setDateError("Check-out date must be equal to or greater than check-in date.");
     } else {
@@ -82,15 +82,32 @@ export default function BookPage() {
 
   const handleDateChange = (e) => {
     const { name, value } = e.target;
-    setDates((prev) => ({ ...prev, [name]: value }));
+    setDates((prev) => {
+      const newDates = { ...prev, [name]: value };
+      
+      // Ensure checkout is always equal to or greater than checkin
+      if (name === 'checkin') {
+        // If checkout is now less than checkin, set it to checkin date (same day checkout allowed)
+        if (newDates.checkout < value) {
+          newDates.checkout = value;
+        }
+      } else if (name === 'checkout') {
+        // If checkout is set to a date before checkin, set it to checkin date
+        if (value < newDates.checkin) {
+          newDates.checkout = newDates.checkin;
+        }
+      }
+      
+      return newDates;
+    });
   };
 
   // The checkAvailable function only fetches available rooms, does not create a reservation.
   const checkAvailable = async () => {
-    // if (dates.checkout <= dates.checkin) {
-    //   setDateError("Check-out date must be greater than check-in date.");
-    //   return;
-    // }
+    if (dates.checkout < dates.checkin) {
+      setDateError("Check-out date must be equal to or greater than check-in date.");
+      return;
+    }
     setChecking(true);
     setChecked(false);
     setAvailableRooms([]);
@@ -102,9 +119,10 @@ export default function BookPage() {
       );
       if (!res.ok) throw new Error("Failed to check availability");
       const data = await res.json();
-      // Instead, allow both 'Vacant' and 'Clean' rooms
-      const availableRoomsFiltered = (data.availableRooms || []).filter((room) => room.status === "Vacant" || room.status === "Clean");
-      setAvailableRooms(availableRoomsFiltered);
+      console.log('🔍 Frontend - Available rooms response:', data);
+      console.log('🔍 Frontend - Available rooms count:', data.availableRooms?.length || 0);
+      // Use the data directly from backend - it should already filter out rooms with reservations
+      setAvailableRooms(data.availableRooms || []);
       setChecked(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error checking availability.");
@@ -328,8 +346,8 @@ export default function BookPage() {
   // Helper for status label and color
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "Vacant":
-        return <span className="text-green-600 font-semibold">Vacant</span>;
+      case "Available":
+        return <span className="text-green-600 font-semibold">Available</span>;
       case "Cleaning":
         return <span className="text-yellow-500 font-semibold">Cleaning (Not Available)</span>;
       case "Clean":
@@ -383,7 +401,7 @@ export default function BookPage() {
         <div className={isSingleRoom ? "grid grid-cols-1" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"}>
           {displayRooms.map((room) => {
             const roomId = (room as any)._id || (room as any).slug;
-            const isAvailable = checked ? availableIds.includes(roomId) && (room.status === "Vacant" || room.status === "Clean") : true;
+            const isAvailable = checked ? availableIds.includes(roomId) : true;
             let imageSrc = "/images/properties/vector.svg";
             if (room.images && room.images.length > 0) {
               if (typeof room.images[0] === "string") imageSrc = room.images[0] as string;
@@ -418,9 +436,9 @@ export default function BookPage() {
                       // Prioritize status first, then date, then both
                       (() => {
                         const status = room.status || "Unknown";
-                        const statusNotVacantOrClean = status !== "Vacant" && status !== "Clean";
+                        const statusNotAvailableOrClean = status !== "Available" && status !== "Clean";
                         const dateNotAvailable = !availableIds.includes(roomId);
-                        if (statusNotVacantOrClean && dateNotAvailable) {
+                        if (statusNotAvailableOrClean && dateNotAvailable) {
                           return (
                            <span className="text-red-500 font-semibold">
   {status === 'Occupied' && 'This room is currently occupied.'}
@@ -428,7 +446,7 @@ export default function BookPage() {
   {status === 'Maintenance' && 'This room is currently under maintenance.'}
 </span>
                           );
-                        } else if (statusNotVacantOrClean) {
+                        } else if (statusNotAvailableOrClean) {
                           return (
                             <span className="text-red-500 font-semibold">
                               This room is under {status} now.

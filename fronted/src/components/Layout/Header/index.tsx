@@ -29,6 +29,7 @@ const Header: React.FC = () => {
   const { userRole, isLoading } = useRole();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   // Get navigation links based on user role
   const navLinks = getNavLinks(userRole);
@@ -73,10 +74,14 @@ const Header: React.FC = () => {
   }, [session?.user?.id, fetchNotifications]);
 
   const sideMenuRef = useRef<HTMLDivElement>(null)
+  const userDropdownRef = useRef<HTMLDivElement>(null)
 
   const handleClickOutside = (event: MouseEvent) => {
     if (sideMenuRef.current && !sideMenuRef.current.contains(event.target as Node)) {
       setNavbarOpen(false)
+    }
+    if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
+      setUserDropdownOpen(false)
     }
   }
 
@@ -95,6 +100,16 @@ const Header: React.FC = () => {
   }, [handleScroll])
 
   const isHomepage = pathname === '/'
+
+  // Get user initials for avatar
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <header className={`fixed h-24 py-1 z-50 w-full bg-transparent transition-all duration-300 lg:px-0 px-4 ${sticky ? "top-3" : "top-0"}`}>
@@ -144,43 +159,169 @@ const Header: React.FC = () => {
               />
             </button>
             
-            {/* Notification Bell Icon - only show if logged in */}
+            {/* User Avatar and Notifications - only show if logged in */}
             {session && (
-              <div className="relative">
-                <button
-                  className="relative"
-                  onClick={() => setNotifOpen((open) => !open)}
-                  aria-label="Show notifications"
-                >
-                  <Icon icon="ph:bell" width={28} height={28} />
-                  {notifications.some(n => !n.read) && (
-                    <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
-                  )}
-                </button>
-                
-                {/* Notification Dropdown */}
-                {notifOpen && (
-                  <ul className="absolute right-0 mt-2 w-80 bg-white dark:bg-dark shadow-lg rounded-lg z-50 max-h-96 overflow-auto">
-                    {notifications.length === 0 ? (
-                      <li className="p-4 text-center text-gray-500">No notifications</li>
-                    ) : (
-                      notifications.map((notif) => (
-                        <li
-                          key={notif._id}
-                          onClick={() => handleMarkRead(notif._id)}
-                          className={`p-4 flex flex-col gap-1 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer ${!notif.read ? "font-bold" : ""}`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-primary">[{notif.type}]</span>
-                            {!notif.read && <span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span>}
-                          </div>
-                          <span>{notif.message}</span>
-                          <span className="text-xs text-gray-400">{new Date(notif.createdAt).toLocaleString()}</span>
-                        </li>
-                      ))
+              <div className="flex items-center gap-3">
+                {/* Notification Bell Icon */}
+                <div className="relative">
+                  <button
+                    className="relative"
+                    onClick={() => setNotifOpen((open) => !open)}
+                    aria-label="Show notifications"
+                  >
+                    <Icon 
+                      icon="ph:bell" 
+                      width={28} 
+                      height={28} 
+                      className={`${isHomepage
+                        ? sticky
+                          ? 'text-dark dark:text-white'
+                          : 'text-white'
+                        : 'text-dark dark:text-white'
+                        }`}
+                    />
+                    {notifications.some(n => !n.read) && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-dark"></span>
                     )}
-                  </ul>
-                )}
+                  </button>
+                  
+                  {/* Notification Dropdown */}
+                  {notifOpen && (
+                    <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-dark shadow-lg rounded-lg z-50 max-h-96 overflow-auto border border-gray-200 dark:border-gray-700">
+                      <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
+                      </div>
+                      {notifications.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                          No notifications
+                        </div>
+                      ) : (
+                        <div className="max-h-64 overflow-auto">
+                          {notifications.map((notif) => (
+                            <div
+                              key={notif._id}
+                              onClick={() => handleMarkRead(notif._id)}
+                              className={`p-4 flex flex-col gap-1 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${!notif.read ? "bg-blue-50 dark:bg-blue-900/20" : ""}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-primary text-sm">[{notif.type}]</span>
+                                {!notif.read && <span className="w-2 h-2 bg-red-500 rounded-full inline-block"></span>}
+                              </div>
+                              <span className="text-sm text-gray-900 dark:text-white">{notif.message}</span>
+                              <span className="text-xs text-gray-400">{new Date(notif.createdAt).toLocaleString()}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* User Avatar with Dropdown */}
+                <div className="relative" ref={userDropdownRef}>
+                  <button
+                    onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                    aria-label="User menu"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold text-sm">
+                      {session.user?.image ? (
+                        <Image
+                          src={session.user.image}
+                          alt={session.user.name || 'User'}
+                          width={40}
+                          height={40}
+                          className="rounded-full"
+                        />
+                      ) : (
+                        getUserInitials(session.user?.name || 'User')
+                      )}
+                    </div>
+                    <Icon 
+                      icon="ph:caret-down" 
+                      width={16} 
+                      height={16} 
+                      className={`${isHomepage
+                        ? sticky
+                          ? 'text-dark dark:text-white'
+                          : 'text-white'
+                        : 'text-dark dark:text-white'
+                        }`}
+                    />
+                  </button>
+
+                  {/* User Dropdown */}
+                  {userDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-dark shadow-lg rounded-lg z-50 border border-gray-200 dark:border-gray-700">
+                      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white font-semibold">
+                            {session.user?.image ? (
+                              <Image
+                                src={session.user.image}
+                                alt={session.user.name || 'User'}
+                                width={48}
+                                height={48}
+                                className="rounded-full"
+                              />
+                            ) : (
+                              getUserInitials(session.user?.name || 'User')
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                              {session.user?.name}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              {session.user?.email}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                                             <div className="p-2">
+                         <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
+                           Role: {isLoading ? 'Loading...' : userRole}
+                         </div>
+                         
+                         <Link
+                           href="/profile"
+                           onClick={() => setUserDropdownOpen(false)}
+                           className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md transition-colors block"
+                         >
+                           <div className="flex items-center gap-2">
+                             <Icon icon="ph:user" width={16} height={16} />
+                             My Profile
+                           </div>
+                         </Link>
+                         
+                         <Link
+                           href="/profile/edit"
+                           onClick={() => setUserDropdownOpen(false)}
+                           className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md transition-colors block"
+                         >
+                           <div className="flex items-center gap-2">
+                             <Icon icon="ph:user-edit" width={16} height={16} />
+                             Edit Profile
+                           </div>
+                         </Link>
+                         
+                         <button
+                           onClick={() => {
+                             setUserDropdownOpen(false);
+                             signOut({ callbackUrl: "/signin" });
+                           }}
+                           className="w-full px-3 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
+                         >
+                           <div className="flex items-center gap-2">
+                             <Icon icon="ph:sign-out" width={16} height={16} />
+                             Logout
+                           </div>
+                         </button>
+                       </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             
@@ -254,19 +395,7 @@ const Header: React.FC = () => {
                 {navLinks.map((item, index) => (
                   <NavLink key={index} item={item} onClick={() => setNavbarOpen(false)} />
                 ))}
-                {session ? (
-                  <li className='flex flex-col gap-2 items-start mt-3'>
-                    <span className='text-white'>Hi, {session.user?.name}</span>
-                    <span className='text-white/60 text-sm'>
-                      Role: {isLoading ? 'Loading...' : userRole}
-                    </span>
-                    <button
-                      onClick={() => signOut({ callbackUrl: "/signin" })}
-                      className='py-2 px-6 bg-primary text-base text-white rounded-full border border-primary font-semibold hover:bg-transparent hover:text-primary duration-300'>
-                      Logout
-                    </button>
-                  </li>
-                ) : (
+                {!session && (
                   <li className='flex items-center gap-4'>
                     <Link href="/signin" className='py-4 px-8 bg-primary text-base leading-4 block w-fit text-white rounded-full border border-primary font-semibold mt-3 hover:bg-transparent hover:text-primary duration-300'>
                       Sign In

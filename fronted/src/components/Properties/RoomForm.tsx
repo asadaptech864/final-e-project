@@ -29,12 +29,9 @@ interface RoomFormProps {
 const RoomForm: React.FC<RoomFormProps> = ({ onSuccess, isEditMode = false, roomData }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [rate, setRate] = useState('');
   const [beds, setBeds] = useState(1);
   const [baths, setBaths] = useState(1);
   const [area, setArea] = useState(0);
-  const [availability, setAvailability] = useState('Available');
-  const [status, setStatus] = useState('Clean');
   const [capacity, setCapacity] = useState(1);
   const [roomType, setRoomType] = useState('');
   const [images, setImages] = useState<FileList | null>(null);
@@ -48,12 +45,9 @@ const RoomForm: React.FC<RoomFormProps> = ({ onSuccess, isEditMode = false, room
     if (isEditMode && roomData) {
       setName(roomData.name);
       setDescription(roomData.description);
-      setRate(roomData.rate);
       setBeds(roomData.beds);
       setBaths(roomData.baths);
       setArea(roomData.area);
-      setAvailability(roomData.availability);
-      setStatus(roomData.status);
       setCapacity(roomData.capacity);
       setRoomType(roomData.roomType);
     }
@@ -63,7 +57,7 @@ const RoomForm: React.FC<RoomFormProps> = ({ onSuccess, isEditMode = false, room
     // Fetch room types for dropdown
     const fetchRoomTypes = async () => {
       try {
-        const res = await fetch('http://localhost:3001/roomtypes/limited');
+        const res = await fetch('http://localhost:3001/roomtypes/allroomtype');
         const data = await res.json();
         setRoomTypes(data.roomtype || []);
       } catch (err) {
@@ -78,7 +72,7 @@ const RoomForm: React.FC<RoomFormProps> = ({ onSuccess, isEditMode = false, room
     setError(null);
     setSuccess(false);
     
-    if (!name || !description || !rate || !beds || !baths || !area || !capacity || !roomType) {
+    if (!name || !description || !beds || !baths || !area || !capacity || !roomType) {
       setError('Please fill all required fields.');
       return;
     }
@@ -94,12 +88,9 @@ const RoomForm: React.FC<RoomFormProps> = ({ onSuccess, isEditMode = false, room
       const formData = new FormData();
       formData.append('name', name);
       formData.append('description', description);
-      formData.append('rate', rate);
       formData.append('beds', beds.toString());
       formData.append('baths', baths.toString());
       formData.append('area', area.toString());
-      formData.append('availability', availability);
-      formData.append('status', status);
       formData.append('capacity', capacity.toString());
       formData.append('roomType', roomType);
       
@@ -126,12 +117,9 @@ const RoomForm: React.FC<RoomFormProps> = ({ onSuccess, isEditMode = false, room
         // Reset form only for new rooms
         setName('');
         setDescription('');
-        setRate('');
         setBeds(1);
         setBaths(1);
         setArea(0);
-        setAvailability('Available');
-        setStatus('Clean');
         setCapacity(1);
         setRoomType('');
         setImages(null);
@@ -169,16 +157,7 @@ const RoomForm: React.FC<RoomFormProps> = ({ onSuccess, isEditMode = false, room
           required
         />
       </div>
-      <div>
-        <label className="block font-medium">Rate *</label>
-        <input
-          type="number"
-          value={rate}
-          onChange={e => setRate(e.target.value)}
-          className="w-full border px-2 py-1 rounded"
-          required
-        />
-      </div>
+     
       <div className="flex gap-2">
         <div className="flex-1">
           <label className="block font-medium">Beds *</label>
@@ -213,31 +192,6 @@ const RoomForm: React.FC<RoomFormProps> = ({ onSuccess, isEditMode = false, room
           className="w-full border px-2 py-1 rounded"
           required
         />
-      </div>
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <label className="block font-medium">Availability</label>
-          <select
-            value={availability}
-            onChange={e => setAvailability(e.target.value)}
-            className="w-full border px-2 py-1 rounded bg-gray-100 dark:bg-gray-800"
-          >
-            <option value="Available">Available</option>
-            <option value="Unavailable">Unavailable</option>
-          </select>
-        </div>
-        <div className="flex-1">
-          <label className="block font-medium">Status</label>
-          <select
-            value={status}
-            onChange={e => setStatus(e.target.value)}
-            className="w-full border px-2 py-1 rounded bg-gray-100 dark:bg-gray-800"
-          >
-            <option value="Clean">Clean</option>
-            <option value="Dirty">Dirty</option>
-            <option value="Maintenance">Maintenance</option>
-          </select>
-        </div>
       </div>
       <div>
         <label className="block font-medium">Capacity *</label>

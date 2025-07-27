@@ -69,12 +69,9 @@ let addRoom=async(req,res)=>{
                  name:req.body.name,
                  description:req.body.description,
                  roomType:req.body.roomType,
-                 rate:req.body.rate,
                  beds:req.body.beds,
                  baths:req.body.baths,
                  area:req.body.area,
-                 availability:req.body.availability,
-                 status:req.body.status,
                  capacity:req.body.capacity,
                  images: imagePaths, // Store array of image URLs
                  

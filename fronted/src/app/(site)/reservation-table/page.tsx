@@ -41,7 +41,6 @@ export default function ReservationTablePage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [completedMsg, setCompletedMsg] = useState("");
   const [cancelMsg, setCancelMsg] = useState("");
-  const [invoiceModal, setInvoiceModal] = useState<{ open: boolean; html: string }>({ open: false, html: "" });
 
   // Handler for check-in
   const handleCheckIn = async (id: string) => {
@@ -287,19 +286,12 @@ export default function ReservationTablePage() {
                       {(userRole === 'guest' || userRole === 'receptionist') && r.status === 'Checked Out' && (
                         <>
                           <span className="text-green-700 font-semibold">Reservation Completed</span>
-                          <button
-                            className="ml-2 py-1 px-4 bg-gray-700 text-white rounded-full text-sm font-semibold hover:bg-gray-900 disabled:opacity-60"
-                            onClick={async () => {
-                              try {
-                                const reservation = await fetchReservationById(r._id);
-                                setInvoiceModal({ open: true, html: reservation.invoiceHtml || "No invoice available." });
-                              } catch {
-                                setInvoiceModal({ open: true, html: "Failed to load invoice." });
-                              }
-                            }}
+                          <Link
+                            href={`/invoice/${r._id}`}
+                            className="ml-2 py-1 px-4 bg-gray-700 text-white rounded-full text-sm font-semibold hover:bg-gray-900 disabled:opacity-60 inline-block"
                           >
                             View Invoice
-                          </button>
+                          </Link>
                         </>
                       )}
                       {/* Receptionist: show state message if no action */}
@@ -336,19 +328,7 @@ export default function ReservationTablePage() {
           <div className="text-center text-red-600 font-semibold mb-4">{cancelMsg}</div>
         )}
       </div>
-      {invoiceModal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg max-w-2xl w-full p-6 relative">
-            <button
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-900"
-              onClick={() => setInvoiceModal({ open: false, html: "" })}
-            >
-              Close
-            </button>
-            <div dangerouslySetInnerHTML={{ __html: invoiceModal.html }} />
-          </div>
-        </div>
-      )}
+
     </section>
   );
 } 
