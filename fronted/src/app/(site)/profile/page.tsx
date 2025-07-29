@@ -3,6 +3,7 @@ import { useSession } from 'next-auth/react'
 import { Icon } from '@iconify/react'
 import Image from 'next/image'
 import Link from 'next/link'
+import HeroSub from "@/components/shared/HeroSub";
 
 const Profile = () => {
   const { data: session } = useSession()
@@ -21,7 +22,13 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-dark py-12">
+    <>
+    <HeroSub
+      title="Profile"
+      description="View your profile information"
+      badge="Profile"
+    />
+    <div className="min-h-screen bg-gray-50 dark:bg-dark py-8">
       <div className="container mx-auto max-w-4xl px-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
           {/* Header */}
@@ -57,7 +64,7 @@ const Profile = () => {
                 href="/profile/edit"
                 className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
               >
-                <Icon icon="ph:user-edit" width={16} height={16} />
+                <Icon icon="ph:user-circle" width={16} height={16} />
                 Edit Profile
               </Link>
             </div>
@@ -151,7 +158,7 @@ const Profile = () => {
                   className="flex items-center gap-3 p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <Icon icon="ph:user-edit" className="text-primary" width={20} height={20} />
+                    <Icon icon="ph:user-circle" className="text-primary" width={20} height={20} />
                   </div>
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">Edit Profile</p>
@@ -177,7 +184,7 @@ const Profile = () => {
                   className="flex items-center gap-3 p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center">
-                    <Icon icon="ph:tool" className="text-orange-600 dark:text-orange-400" width={20} height={20} />
+                    <Icon icon="ph:wrench" className="text-orange-600 dark:text-orange-400" width={20} height={20} />
                   </div>
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">Maintenance</p>
@@ -190,6 +197,7 @@ const Profile = () => {
         </div>
       </div>
     </div>
+    </>
   )
 }
 

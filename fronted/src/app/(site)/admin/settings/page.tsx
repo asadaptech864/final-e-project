@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRole } from "@/hooks/useRole";
 import { Icon } from '@iconify/react';
+import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 
 type SystemSettings = {
   general: {
@@ -135,8 +136,8 @@ const NotificationSender = () => {
   };
 
   return (
-    <div className="space-y-6 border-t pt-6">
-      <h3 className="text-lg font-semibold text-dark dark:text-white">Send Notifications</h3>
+    <div className="space-y-6">
+      {/* <h3 className="text-lg font-semibold text-dark dark:text-white">Send Notifications</h3> */}
       
       {/* Notification Message */}
       {notificationMessage.text && (
@@ -299,13 +300,13 @@ export default function SystemSettingsPage() {
     );
   }
 
-  if (userRole !== 'admin') {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-lg font-semibold">
-        Access denied. Only administrators can access system settings.
-      </div>
-    );
-  }
+  // if (userRole !== 'admin') {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center text-lg font-semibold">
+  //       Access denied. Only administrators can access system settings.
+  //     </div>
+  //   );
+  // }
 
   if (loading) {
     return (
@@ -331,6 +332,8 @@ export default function SystemSettingsPage() {
   };
 
   return (
+    <ProtectedRoute allowedRoles={['admin']}>
+      <>
     <section className="!pt-44 pb-20 min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto max-w-7xl px-5 2xl:px-0">
         {/* Header */}
@@ -791,10 +794,10 @@ export default function SystemSettingsPage() {
             {/* Notifications */}
             {activeTab === 'notifications' && (
               <div className="space-y-6">
-                <h2 className="text-xl font-bold text-dark dark:text-white">System Notifications</h2>
+                <h2 className="text-xl font-bold text-dark dark:text-white">Send Notifications</h2>
                 
                 {/* Notification Settings */}
-                <div className="space-y-4">
+                {/* <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-dark dark:text-white">Notification Settings</h3>
                   {[
                     { key: 'emailNotifications', label: 'Email Notifications', description: 'Send notifications via email' },
@@ -825,14 +828,14 @@ export default function SystemSettingsPage() {
                       </label>
                     </div>
                   ))}
-                </div>
-                <button
+                </div> */}
+                {/* <button
                   onClick={() => handleSave('notifications', settings.notifications)}
                   disabled={saving}
                   className="bg-primary text-white px-6 py-2 rounded-md hover:bg-dark transition disabled:opacity-50"
                 >
                   {saving ? 'Saving...' : 'Save Notification Settings'}
-                </button>
+                </button> */}
 
                 {/* Send Notifications */}
                 <NotificationSender />
@@ -842,5 +845,7 @@ export default function SystemSettingsPage() {
         </div>
       </div>
     </section>
+    </>
+    </ProtectedRoute>
   );
 } 

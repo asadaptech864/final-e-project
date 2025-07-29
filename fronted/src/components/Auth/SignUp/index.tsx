@@ -3,11 +3,39 @@ import Link from "next/link";
 import axios from 'axios';
 import SocialSignUp from "../SocialSignUp";
 import Logo from "@/components/Layout/Header/BrandLogo/Logo";
-import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { signIn, useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 const SignUp = () => {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Redirect if user is already logged in - before page loads
+  useEffect(() => {
+    if (status === "authenticated" && session) {
+      router.replace("/");
+      return;
+    }
+  }, [session, status, router]);
+
+  // Show loading while checking authentication
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render the form if user is authenticated
+  if (status === "authenticated" && session) {
+    return null;
+  }
 
   const addUser = async (e: React.FormEvent) => {
     e.preventDefault();

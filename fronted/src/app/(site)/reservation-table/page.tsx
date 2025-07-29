@@ -5,10 +5,11 @@ import { useRole } from "@/hooks/useRole";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 
 type Reservation = {
   _id: string;
-  room?: { name?: string; roomType?: string };
+  room?: { name?: string; roomType?: string; _id?: string };
   checkin: string;
   checkout: string;
   guests: number;
@@ -41,6 +42,7 @@ export default function ReservationTablePage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [completedMsg, setCompletedMsg] = useState("");
   const [cancelMsg, setCancelMsg] = useState("");
+  const [feedbackStatus, setFeedbackStatus] = useState<{[key: string]: boolean}>({});
 
   // Handler for check-in
   const handleCheckIn = async (id: string) => {
@@ -136,6 +138,20 @@ export default function ReservationTablePage() {
     return data.reservation;
   };
 
+  // Check feedback status for reservations
+  const checkFeedbackStatus = async (reservationId: string) => {
+    try {
+      const res = await fetch(`http://localhost:3001/feedback/check/${reservationId}`);
+      const data = await res.json();
+      setFeedbackStatus(prev => ({
+        ...prev,
+        [reservationId]: data.exists
+      }));
+    } catch (error) {
+      console.error('Error checking feedback status:', error);
+    }
+  };
+
   useEffect(() => {
     if (!session?.user) return;
     const fetchReservations = async () => {
@@ -147,7 +163,7 @@ export default function ReservationTablePage() {
           const id = session.user.id;
           const email = encodeURIComponent(session.user.email || "");
           url = `http://localhost:3001/reservations/guest/${id}?email=${email}`;
-        } else if (userRole === "receptionist") {
+        } else if (userRole === "receptionist" || userRole === "admin" || userRole === "manager") {
           url = `http://localhost:3001/reservations/all`;
         } else {
           setReservations([]);
@@ -157,7 +173,17 @@ export default function ReservationTablePage() {
         const res = await fetch(url);
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Failed to fetch reservations");
-        setReservations(data.reservations || data.allReservations || []);
+        const fetchedReservations = data.reservations || data.allReservations || [];
+        setReservations(fetchedReservations);
+        
+        // Check feedback status for checked out reservations
+        if (userRole === "guest") {
+          fetchedReservations.forEach((r: Reservation) => {
+            if (r.status === 'Checked Out' && r.reservationId) {
+              checkFeedbackStatus(r.reservationId);
+            }
+          });
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Error fetching reservations");
       } finally {
@@ -176,6 +202,8 @@ export default function ReservationTablePage() {
   }
 
   return (
+    <ProtectedRoute allowedRoles={['guest','receptionist','admin', 'manager']}>
+      <>
     <section className="!pt-44 pb-20 min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto max-w-6xl px-5 2xl:px-0">
         <h1 className="text-3xl font-bold mb-8 text-dark dark:text-white text-center">Reservations</h1>
@@ -292,6 +320,18 @@ export default function ReservationTablePage() {
                           >
                             View Invoice
                           </Link>
+                          {userRole === 'guest' && r.room?._id && (
+                            <Link
+                              href={`/feedback/room/${r.room._id}?reservationId=${r.reservationId}`}
+                              className={`ml-2 py-1 px-4 rounded-full text-sm font-semibold inline-block ${
+                                feedbackStatus[r.reservationId || '']
+                                  ? 'bg-green-600 text-white cursor-not-allowed opacity-60'
+                                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                              }`}
+                            >
+                              {feedbackStatus[r.reservationId || ''] ? 'Feedback Submitted' : 'Leave Feedback'}
+                            </Link>
+                          )}
                         </>
                       )}
                       {/* Receptionist: show state message if no action */}
@@ -330,5 +370,7 @@ export default function ReservationTablePage() {
       </div>
 
     </section>
+    </>
+    </ProtectedRoute>
   );
 } 

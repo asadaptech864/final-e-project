@@ -1,16 +1,44 @@
 "use client";
-import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { signIn, useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import SocialSignIn from "../SocialSignIn";
 import toast, { Toaster } from 'react-hot-toast';
 import Logo from "@/components/Layout/Header/BrandLogo/Logo";
 
 const Signin = () => {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Redirect if user is already logged in - before page loads
+  useEffect(() => {
+    if (status === "authenticated" && session) {
+      router.replace("/");
+      return;
+    }
+  }, [session, status, router]);
+
+  // Show loading while checking authentication
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render the form if user is authenticated
+  if (status === "authenticated" && session) {
+    return null;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();

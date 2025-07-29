@@ -2,305 +2,554 @@ import Rooms from '../Modals/RoomsModal.mjs';
 import Users from '../Modals/UsersModal.mjs';
 import Reservation from '../Modals/ReservationModal.mjs';
 import Maintenance from '../Modals/MaintenanceModal.mjs';
+import Feedback from '../Modals/FeedbackModal.mjs';
 
 // Get comprehensive analytics data
 export const getAnalytics = async (req, res) => {
   try {
-    // Room Status Analytics - Get all room statuses
-    const totalRooms = await Rooms.countDocuments();
-    const occupiedRooms = await Rooms.countDocuments({ status: 'Occupied' });
-    const availableRooms = await Rooms.countDocuments({ status: 'Available' });
-    const maintenanceRooms = await Rooms.countDocuments({ status: 'Maintenance' });
-    const cleaningRooms = await Rooms.countDocuments({ status: 'Cleaning' });
-    const cleanRooms = await Rooms.countDocuments({ status: 'Clean' });
-    
-    // Reserved rooms (rooms with confirmed reservations for today)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    // Get all confirmed reservations that overlap with today
-    const confirmedReservations = await Reservation.find({
-      status: 'Confirmed', 
-      $or: [
-        // Reservations that start today
-        { checkin: { $gte: today, $lt: tomorrow } },
-        // Reservations that are ongoing (started before today and end after today)
-        { 
-          checkin: { $lt: today },
-          checkout: { $gt: today }
+    console.log('🚀 Starting analytics data fetch...');
+    const startTime = Date.now();
+
+    // Execute all queries in parallel for better performance
+    const [
+      roomStatusAggregation,
+      staffInfoAggregation,
+      reservationStatsAggregation,
+      confirmedReservations,
+      revenueData,
+      maintenanceData,
+      feedbackData,
+      maintenanceStatusBreakdown,
+      maintenanceAssignedUsers,
+      monthlyMaintenanceTrend,
+      monthlyRevenueTrend
+    ] = await Promise.all([
+      // Room Status Analytics - Single aggregation query
+      Rooms.aggregate([
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            occupied: { $sum: { $cond: [{ $eq: ['$status', 'Occupied'] }, 1, 0] } },
+            available: { $sum: { $cond: [{ $eq: ['$status', 'Available'] }, 1, 0] } },
+            maintenance: { $sum: { $cond: [{ $eq: ['$status', 'Maintenance'] }, 1, 0] } },
+            cleaning: { $sum: { $cond: [{ $eq: ['$status', 'Cleaning'] }, 1, 0] } },
+            clean: { $sum: { $cond: [{ $eq: ['$status', 'Clean'] }, 1, 0] } }
+          }
         }
-      ]
-    });
+      ]),
 
-    // Count unique rooms that are reserved
-    const reservedRoomIds = [...new Set(confirmedReservations.map(res => res.room?.toString()).filter(Boolean))];
-    const reservedRooms = reservedRoomIds.length;
-
-    // Non-reserved rooms = total rooms - reserved rooms
-    const nonReservedRooms = Math.max(0, totalRooms - reservedRooms);
-
-    // Staff Information
-    const staffRoles = ['receptionist', 'housekeeping', 'maintenance', 'manager'];
-    const staffInfo = [];
-    
-    for (const role of staffRoles) {
-      try {
-        const totalStaff = await Users.countDocuments({ role });
-        const activeStaff = await Users.countDocuments({ role, isActive: true });
-        staffInfo.push({
-          role,
-          count: totalStaff,
-          active: activeStaff
-        });
-      } catch (error) {
-        console.error(`Error fetching staff info for role ${role}:`, error);
-        staffInfo.push({
-          role,
-          count: 0,
-          active: 0
-        });
-      }
-    }
-
-    // Reservation Statistics
-    const totalReservations = await Reservation.countDocuments();
-    const pendingReservations = await Reservation.countDocuments({ status: 'Pending' });
-    const confirmedReservationsCount = await Reservation.countDocuments({ status: 'Confirmed' });
-    const checkedInReservations = await Reservation.countDocuments({ status: 'Checked In' });
-    const checkedOutReservations = await Reservation.countDocuments({ status: 'Checked Out' });
-    const cancelledReservations = await Reservation.countDocuments({ status: 'Cancelled' });
-
-    // Revenue Analytics
-    const currentDate = new Date();
-    const startOfDay = new Date(currentDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(currentDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
-
-    const startOfYear = new Date(currentDate.getFullYear(), 0, 1);
-    const endOfYear = new Date(currentDate.getFullYear(), 11, 31, 23, 59, 59, 999);
-
-    // Calculate daily revenue (from checked out reservations today)
-    const dailyRevenue = await Reservation.aggregate([
-      {
-        $match: {
-          status: 'Checked Out',
-          actualCheckout: { $gte: startOfDay, $lte: endOfDay },
-          'bill.total': { $exists: true, $ne: null }
+      // Staff Information - Single aggregation query
+      Users.aggregate([
+        {
+          $match: {
+            role: { $in: ['receptionist', 'housekeeping', 'maintenance', 'manager'] }
+          }
+        },
+        {
+          $group: {
+            _id: '$role',
+            count: { $sum: 1 },
+            active: { $sum: { $cond: ['$isActive', 1, 0] } }
+          }
+        },
+        {
+          $sort: { _id: 1 }
         }
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: '$bill.total' }
-        }
-      }
-    ]);
+      ]),
 
-    // Calculate monthly revenue
-    const monthlyRevenue = await Reservation.aggregate([
-      {
-        $match: {
-          status: 'Checked Out',
-          actualCheckout: { $gte: startOfMonth, $lte: endOfMonth },
-          'bill.total': { $exists: true, $ne: null }
+      // Reservation Statistics - Single aggregation query
+      Reservation.aggregate([
+        {
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            pending: { $sum: { $cond: [{ $eq: ['$status', 'Pending'] }, 1, 0] } },
+            confirmed: { $sum: { $cond: [{ $eq: ['$status', 'Confirmed'] }, 1, 0] } },
+            checkedIn: { $sum: { $cond: [{ $eq: ['$status', 'Checked In'] }, 1, 0] } },
+            checkedOut: { $sum: { $cond: [{ $eq: ['$status', 'Checked Out'] }, 1, 0] } },
+            cancelled: { $sum: { $cond: [{ $eq: ['$status', 'Cancelled'] }, 1, 0] } }
+          }
         }
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: '$bill.total' }
-        }
-      }
-    ]);
+      ]),
 
-    // Calculate yearly revenue
-    const yearlyRevenue = await Reservation.aggregate([
-      {
-        $match: {
-          status: 'Checked Out',
-          actualCheckout: { $gte: startOfYear, $lte: endOfYear },
-          'bill.total': { $exists: true, $ne: null }
-        }
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: '$bill.total' }
-        }
-      }
-    ]);
+      // Reserved rooms calculation
+      Reservation.find({
+        status: 'Confirmed',
+        $or: [
+          { checkin: { $gte: new Date().setHours(0, 0, 0, 0), $lt: new Date().setHours(0, 0, 0, 0) + 86400000 } },
+          { 
+            checkin: { $lt: new Date().setHours(0, 0, 0, 0) },
+            checkout: { $gt: new Date().setHours(0, 0, 0, 0) }
+          }
+        ]
+      }).select('room').lean(),
 
-    // Monthly data for the last 6 months
-    const monthlyData = [];
-    for (let i = 5; i >= 0; i--) {
-      const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-      const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() - i + 1, 0, 23, 59, 59, 999);
-      
-      const monthRevenue = await Reservation.aggregate([
+      // Revenue Analytics - Optimized aggregation
+      Reservation.aggregate([
         {
           $match: {
             status: 'Checked Out',
-            actualCheckout: { $gte: monthStart, $lte: monthEnd },
             'bill.total': { $exists: true, $ne: null }
           }
         },
         {
           $group: {
             _id: null,
-            total: { $sum: '$bill.total' }
+            daily: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $gte: ['$actualCheckout', new Date().setHours(0, 0, 0, 0)] },
+                      { $lte: ['$actualCheckout', new Date().setHours(23, 59, 59, 999)] }
+                    ]
+                  },
+                  '$bill.total',
+                  0
+                ]
+              }
+            },
+            monthly: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $gte: ['$actualCheckout', new Date(new Date().getFullYear(), new Date().getMonth(), 1)] },
+                      { $lte: ['$actualCheckout', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59, 999)] }
+                    ]
+                  },
+                  '$bill.total',
+                  0
+                ]
+              }
+            },
+            yearly: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $gte: ['$actualCheckout', new Date(new Date().getFullYear(), 0, 1)] },
+                      { $lte: ['$actualCheckout', new Date(new Date().getFullYear(), 11, 31, 23, 59, 59, 999)] }
+                    ]
+                  },
+                  '$bill.total',
+                  0
+                ]
+              }
+            }
           }
         }
-      ]);
+      ]),
 
-      const monthOccupancy = await Reservation.aggregate([
+      // Maintenance Analytics - Optimized aggregation
+      Maintenance.aggregate([
         {
-          $match: {
-            status: { $in: ['Confirmed', 'Checked In'] },
-            checkin: { $lte: monthEnd },
-            checkout: { $gte: monthStart }
+          $group: {
+            _id: null,
+            total: { $sum: 1 },
+            daily: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $gte: ['$createdAt', new Date().setHours(0, 0, 0, 0)] },
+                      { $lte: ['$createdAt', new Date().setHours(23, 59, 59, 999)] }
+                    ]
+                  },
+                  1,
+                  0
+                ]
+              }
+            },
+            monthly: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $gte: ['$createdAt', new Date(new Date().getFullYear(), new Date().getMonth(), 1)] },
+                      { $lte: ['$createdAt', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59, 999)] }
+                    ]
+                  },
+                  1,
+                  0
+                ]
+              }
+            },
+            yearly: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $gte: ['$createdAt', new Date(new Date().getFullYear(), 0, 1)] },
+                      { $lte: ['$createdAt', new Date(new Date().getFullYear(), 11, 31, 23, 59, 59, 999)] }
+                    ]
+                  },
+                  1,
+                  0
+                ]
+              }
+            },
+            assigned: {
+              $sum: {
+                $cond: [
+                  { $ne: ['$assignedTo', null] },
+                  1,
+                  0
+                ]
+              }
+            },
+            unassigned: {
+              $sum: {
+                $cond: [
+                  { $eq: ['$assignedTo', null] },
+                  1,
+                  0
+                ]
+              }
+            }
+          }
+        }
+      ]),
+
+      // Feedback Analytics - Optimized aggregation
+      Feedback.aggregate([
+        {
+          $lookup: {
+            from: 'rooms',
+            localField: 'roomId',
+            foreignField: '_id',
+            as: 'roomData'
+          }
+        },
+        {
+          $unwind: {
+            path: '$roomData',
+            preserveNullAndEmptyArrays: true
           }
         },
         {
           $group: {
             _id: null,
-            count: { $sum: 1 }
+            totalReviews: { $sum: 1 },
+            averageRating: { $avg: '$rating' },
+            ratingBreakdown: {
+              $push: {
+                rating: '$rating',
+                count: 1
+              }
+            },
+            recentReviews: {
+              $push: {
+                _id: '$_id',
+                guestName: '$guestName',
+                rating: '$rating',
+                comment: '$comment',
+                roomName: '$roomData.name',
+                createdAt: '$createdAt'
+              }
+            },
+            roomRatings: {
+              $push: {
+                roomId: '$roomId',
+                roomName: '$roomData.name',
+                rating: '$rating',
+                cleanliness: '$cleanliness',
+                comfort: '$comfort',
+                service: '$service',
+                value: '$value'
+              }
+            }
           }
         }
-      ]);
+      ]),
 
-      monthlyData.push({
-        month: monthStart.toLocaleDateString('en-US', { month: 'short' }),
-        revenue: monthRevenue[0]?.total || 0,
-        occupancy: monthOccupancy[0]?.count || 0
-      });
-    }
+      // Maintenance Status Breakdown - Optimized aggregation
+      Maintenance.aggregate([
+        {
+          $group: {
+            _id: '$status',
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $sort: { count: -1 }
+        }
+      ]),
 
-    // Calculate revenue trend (compare with previous period)
-    const previousMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
-    const previousMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0, 23, 59, 59, 999);
+      // Maintenance Assigned to Users - Optimized aggregation
+      Maintenance.aggregate([
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'assignedTo',
+            foreignField: '_id',
+            as: 'assignedUser'
+          }
+        },
+        {
+          $unwind: {
+            path: '$assignedUser',
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $group: {
+            _id: {
+              userId: '$assignedTo',
+              status: '$status'
+            },
+            name: { $first: '$assignedUser.name' },
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $match: {
+            '_id.userId': { $ne: null }
+          }
+        },
+        {
+          $group: {
+            _id: '$_id.userId',
+            name: { $first: '$name' },
+            statusCounts: {
+              $push: {
+                status: '$_id.status',
+                count: '$count'
+              }
+            },
+            total: { $sum: '$count' }
+          }
+        }
+      ]),
+
+      // Monthly Maintenance Trend - Optimized aggregation
+      Maintenance.aggregate([
+        {
+          $group: {
+            _id: {
+              year: { $year: '$createdAt' },
+              month: { $month: '$createdAt' }
+            },
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $sort: { '_id.year': 1, '_id.month': 1 }
+        },
+        {
+          $limit: 6
+        }
+      ]),
+
+      // Monthly Revenue Trend - Optimized aggregation
+      Reservation.aggregate([
+        {
+          $match: {
+            status: 'Checked Out',
+            'bill.total': { $exists: true, $ne: null }
+          }
+        },
+        {
+          $group: {
+            _id: {
+              year: { $year: '$actualCheckout' },
+              month: { $month: '$actualCheckout' }
+            },
+            revenue: { $sum: '$bill.total' },
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $sort: { '_id.year': 1, '_id.month': 1 }
+        },
+        {
+          $limit: 6
+        }
+      ])
+    ]);
+
+    console.log(`⏱️  Parallel queries completed in ${Date.now() - startTime}ms`);
+
+    // Extract data from aggregation results
+    const roomStatus = roomStatusAggregation[0] || { total: 0, occupied: 0, available: 0, maintenance: 0, cleaning: 0, clean: 0 };
+    const reservedRooms = new Set(confirmedReservations.map(res => res.room?.toString()).filter(Boolean)).size;
+    const nonReservedRooms = Math.max(0, roomStatus.total - reservedRooms);
+
+    // Process staff info
+    const staffInfo = staffInfoAggregation.map(staff => ({
+      role: staff._id,
+      count: staff.count,
+      active: staff.active
+    }));
+
+    // Process reservation stats
+    const reservationStats = reservationStatsAggregation[0] || { total: 0, pending: 0, confirmed: 0, checkedIn: 0, checkedOut: 0, cancelled: 0 };
+
+    // Process revenue data
+    const revenueResult = revenueData[0] || { daily: 0, monthly: 0, yearly: 0 };
+
+    // Process maintenance data
+    const maintenanceResult = maintenanceData[0] || { total: 0, daily: 0, monthly: 0, yearly: 0, assigned: 0, unassigned: 0 };
+
+    // Process feedback data
+    const feedbackResult = feedbackData[0];
+    const feedbackTotalReviews = feedbackResult?.totalReviews || 0;
+    const feedbackAverageRating = feedbackResult?.averageRating || 0;
     
-    const previousMonthRevenue = await Reservation.aggregate([
-      {
-        $match: {
-          status: 'Checked Out',
-          actualCheckout: { $gte: previousMonthStart, $lte: previousMonthEnd },
-          'bill.total': { $exists: true, $ne: null }
-        }
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: '$bill.total' }
-        }
-      }
-    ]);
+    // Process rating breakdown
+    const feedbackRatingBreakdown = {};
+    if (feedbackResult?.ratingBreakdown) {
+      feedbackResult.ratingBreakdown.forEach(item => {
+        feedbackRatingBreakdown[item.rating] = (feedbackRatingBreakdown[item.rating] || 0) + item.count;
+      });
+    }
 
-    const currentMonthRevenue = monthlyRevenue[0]?.total || 0;
-    const prevMonthRevenue = previousMonthRevenue[0]?.total || 0;
-    const revenueTrend = prevMonthRevenue > 0 ? ((currentMonthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100 : 0;
+    // Process room ratings
+    const feedbackRoomRatingsMap = new Map();
+    if (feedbackResult?.roomRatings) {
+      feedbackResult.roomRatings.forEach(feedback => {
+        if (feedback.roomId) {
+          const roomId = feedback.roomId.toString();
+          if (!feedbackRoomRatingsMap.has(roomId)) {
+            feedbackRoomRatingsMap.set(roomId, {
+              roomId,
+              roomName: feedback.roomName || 'Unknown Room',
+              ratings: [],
+              cleanliness: [],
+              comfort: [],
+              service: [],
+              value: []
+            });
+          }
+          const roomData = feedbackRoomRatingsMap.get(roomId);
+          roomData.ratings.push(feedback.rating);
+          roomData.cleanliness.push(feedback.cleanliness);
+          roomData.comfort.push(feedback.comfort);
+          roomData.service.push(feedback.service);
+          roomData.value.push(feedback.value);
+        }
+      });
+    }
 
-    // --- Maintenance Analytics ---
-    // Total maintenance requests
-    const totalMaintenance = await Maintenance.countDocuments();
-    // Created today
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-    const endOfToday = new Date();
-    endOfToday.setHours(23, 59, 59, 999);
-    const dailyMaintenance = await Maintenance.countDocuments({ createdAt: { $gte: startOfToday, $lte: endOfToday } });
-    // Created this month
-    const startOfThisMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const endOfThisMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
-    const monthlyMaintenance = await Maintenance.countDocuments({ createdAt: { $gte: startOfThisMonth, $lte: endOfThisMonth } });
-    // Created this year
-    const startOfThisYear = new Date(currentDate.getFullYear(), 0, 1);
-    const endOfThisYear = new Date(currentDate.getFullYear(), 11, 31, 23, 59, 59, 999);
-    const yearlyMaintenance = await Maintenance.countDocuments({ createdAt: { $gte: startOfThisYear, $lte: endOfThisYear } });
-    // Assigned/unassigned
-    const assignedMaintenance = await Maintenance.countDocuments({ assignedTo: { $ne: null } });
-    const unassignedMaintenance = await Maintenance.countDocuments({ assignedTo: null });
-    // Status breakdown
-    const statusAgg = await Maintenance.aggregate([
-      { $group: { _id: '$status', count: { $sum: 1 } } }
-    ]);
+    const feedbackRoomRatings = Array.from(feedbackRoomRatingsMap.values()).map(room => ({
+      roomId: room.roomId,
+      roomName: room.roomName,
+      averageRating: room.ratings.length > 0 ? room.ratings.reduce((sum, r) => sum + r, 0) / room.ratings.length : 0,
+      totalReviews: room.ratings.length,
+      cleanliness: room.cleanliness.length > 0 ? room.cleanliness.reduce((sum, c) => sum + c, 0) / room.cleanliness.length : 0,
+      comfort: room.comfort.length > 0 ? room.comfort.reduce((sum, c) => sum + c, 0) / room.comfort.length : 0,
+      service: room.service.length > 0 ? room.service.reduce((sum, s) => sum + s, 0) / room.service.length : 0,
+      value: room.value.length > 0 ? room.value.reduce((sum, v) => sum + v, 0) / room.value.length : 0
+    }));
+
+    // Process recent reviews
+    const feedbackRecentReviews = feedbackResult?.recentReviews?.slice(0, 10) || [];
+
+    // Process maintenance status breakdown
     const statusBreakdown = {};
-    statusAgg.forEach(s => { statusBreakdown[s._id] = s.count; });
-    // Per-user assignment count and status
-    const userAgg = await Maintenance.aggregate([
-      { $match: { assignedTo: { $ne: null } } },
-      { $lookup: { from: 'users', localField: 'assignedTo', foreignField: '_id', as: 'user' } },
-      { $unwind: '$user' },
-      { $group: { _id: { user: '$assignedTo', userName: '$user.name', status: '$status' }, count: { $sum: 1 } } }
-    ]);
-    // Format per-user breakdown
-    const perUser = {};
-    for (const entry of userAgg) {
-      const userId = entry._id.user?.toString() || 'Unassigned';
-      const userName = entry._id.userName || 'Unknown User';
-      if (!perUser[userId]) perUser[userId] = { name: userName };
-      perUser[userId][entry._id.status] = entry.count;
-    }
-    // Monthly maintenance trend data
-    const monthlyMaintenanceData = [];
-    for (let i = 5; i >= 0; i--) {
-      const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-      const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() - i + 1, 0, 23, 59, 59, 999);
-      
-      const monthMaintenance = await Maintenance.countDocuments({
-        createdAt: { $gte: monthStart, $lte: monthEnd }
-      });
+    maintenanceStatusBreakdown.forEach(item => {
+      statusBreakdown[item._id] = item.count;
+    });
 
-      monthlyMaintenanceData.push({
-        month: monthStart.toLocaleDateString('en-US', { month: 'short' }),
-        count: monthMaintenance
-      });
-    }
+    // Process maintenance assigned to users
+    const perUser = {};
+    maintenanceAssignedUsers.forEach(item => {
+      if (item._id) {
+        const userData = {
+          name: item.name || 'Unknown User',
+          total: item.total
+        };
+        
+        // Add status counts dynamically
+        item.statusCounts.forEach(statusCount => {
+          userData[statusCount.status] = statusCount.count;
+        });
+        
+        perUser[item._id.toString()] = userData;
+      }
+    });
+
+    // Process monthly maintenance trend
+    const monthlyMaintenanceData = monthlyMaintenanceTrend.map(item => ({
+      month: new Date(item._id.year, item._id.month - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      count: item.count
+    }));
+
+    // Process monthly revenue trend with occupancy data
+    const monthlyData = monthlyRevenueTrend.map(item => ({
+      month: new Date(item._id.year, item._id.month - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+      revenue: item.revenue,
+      occupancy: item.count // Using count as occupancy for the original design
+    }));
+
+    // Calculate revenue trend (compare current month with previous month)
+    const currentMonth = new Date().getMonth() + 1; // MongoDB months are 1-indexed
+    const currentYear = new Date().getFullYear();
+    const currentMonthData = monthlyRevenueTrend.find(item => 
+      item._id.year === currentYear && item._id.month === currentMonth
+    );
+    const previousMonthData = monthlyRevenueTrend.find(item => 
+      item._id.year === currentYear && item._id.month === currentMonth - 1
+    ) || monthlyRevenueTrend.find(item => 
+      item._id.year === currentYear - 1 && item._id.month === 12
+    );
+
+    const currentMonthRevenue = currentMonthData?.revenue || 0;
+    const previousMonthRevenue = previousMonthData?.revenue || 0;
+    const revenueTrend = previousMonthRevenue > 0 ? 
+      ((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100 : 0;
 
     const analyticsData = {
       roomStatus: {
-        total: totalRooms,
-        occupied: occupiedRooms,
-        available: availableRooms,
-        maintenance: maintenanceRooms,
-        cleaning: cleaningRooms,
-        clean: cleanRooms,
+        total: roomStatus.total,
+        occupied: roomStatus.occupied,
+        available: roomStatus.available,
+        maintenance: roomStatus.maintenance,
+        cleaning: roomStatus.cleaning,
+        clean: roomStatus.clean,
         reserved: reservedRooms,
         nonReserved: nonReservedRooms
       },
       staffInfo,
       reservations: {
-        total: totalReservations,
-        pending: pendingReservations,
-        confirmed: confirmedReservationsCount,
-        checkedIn: checkedInReservations,
-        checkedOut: checkedOutReservations,
-        cancelled: cancelledReservations
+        total: reservationStats.total,
+        pending: reservationStats.pending,
+        confirmed: reservationStats.confirmed,
+        checkedIn: reservationStats.checkedIn,
+        checkedOut: reservationStats.checkedOut,
+        cancelled: reservationStats.cancelled
       },
       revenue: {
-        daily: dailyRevenue[0]?.total || 0,
+        daily: revenueResult.daily || 0,
         monthly: currentMonthRevenue,
-        yearly: yearlyRevenue[0]?.total || 0,
+        yearly: revenueResult.yearly || 0,
         trend: revenueTrend
       },
       monthlyData,
       maintenance: {
-        total: totalMaintenance,
-        daily: dailyMaintenance,
-        monthly: monthlyMaintenance,
-        yearly: yearlyMaintenance,
-        assigned: assignedMaintenance,
-        unassigned: unassignedMaintenance,
+        total: maintenanceResult.total,
+        daily: maintenanceResult.daily,
+        monthly: maintenanceResult.monthly,
+        yearly: maintenanceResult.yearly,
+        assigned: maintenanceResult.assigned,
+        unassigned: maintenanceResult.unassigned,
         statusBreakdown,
         perUser,
         monthlyData: monthlyMaintenanceData
+      },
+      feedback: {
+        overall: {
+          averageRating: feedbackAverageRating,
+          totalReviews: feedbackTotalReviews,
+          ratingBreakdown: feedbackRatingBreakdown
+        },
+        roomRatings: feedbackRoomRatings,
+        recentReviews: feedbackRecentReviews
       }
     };
+
+    console.log(`✅ Analytics data prepared in ${Date.now() - startTime}ms total`);
 
     res.status(200).json(analyticsData);
   } catch (error) {

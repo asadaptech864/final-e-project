@@ -5,6 +5,7 @@ import { useRole } from "@/hooks/useRole";
 import { Icon } from '@iconify/react';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
+import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 
 type AnalyticsData = {
   roomStatus: {
@@ -51,6 +52,31 @@ type AnalyticsData = {
     unassigned: number;
     perUser: { [key: string]: { name: string; [key: string]: number | string } };
     monthlyData: Array<{ month: string; count: number }>;
+  };
+  feedback: {
+    overall: {
+      averageRating: number;
+      totalReviews: number;
+      ratingBreakdown: { [key: string]: number };
+    };
+    roomRatings: Array<{
+      roomId: string;
+      roomName: string;
+      averageRating: number;
+      totalReviews: number;
+      cleanliness: number;
+      comfort: number;
+      service: number;
+      value: number;
+    }>;
+    recentReviews: Array<{
+      _id: string;
+      guestName: string;
+      rating: number;
+      comment: string;
+      roomName: string;
+      createdAt: string;
+    }>;
   };
 };
 
@@ -107,13 +133,13 @@ export default function AnalyticsPage() {
     );
   }
 
-  if (userRole !== 'admin' && userRole !== 'manager') {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-lg font-semibold">
-        Access denied. Only managers and admins can view analytics.
-      </div>
-    );
-  }
+  // if (userRole !== 'admin' && userRole !== 'manager') {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center text-lg font-semibold">
+  //       Access denied. Only managers and admins can view analytics.
+  //     </div>
+  //   );
+  // }
 
   if (loading) {
     return (
@@ -151,6 +177,8 @@ export default function AnalyticsPage() {
   };
 
   return (
+    <ProtectedRoute allowedRoles={['admin', 'manager']}>
+      <>
     <section className="!pt-44 pb-20 min-h-screen bg-gray-50 dark:bg-gray-900">
       <div id="analytics-content" className="container mx-auto max-w-7xl px-5 2xl:px-0">
         {/* Header */}
@@ -560,6 +588,193 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
+        {/* Feedback & Rating Analytics */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-xl font-bold mb-6 text-dark dark:text-white">Feedback & Rating Analytics</h2>
+          
+          {/* Overall Rating Summary */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {/* Overall Rating Card */}
+            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-yellow-700 dark:text-yellow-300">Overall Rating</h3>
+                <Icon icon="ph:star-fill" className="text-yellow-500 text-2xl" />
+              </div>
+              <div className="text-4xl font-bold text-yellow-700 dark:text-yellow-300 mb-2">
+                {analyticsData.feedback?.overall?.averageRating?.toFixed(1) || '0.0'}
+              </div>
+              <div className="text-sm text-yellow-600 dark:text-yellow-400 mb-4">
+                Based on {analyticsData.feedback?.overall?.totalReviews || 0} reviews
+              </div>
+              {/* Star Rating Display */}
+              <div className="flex items-center gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <Icon
+                    key={i}
+                    icon={i < Math.floor(analyticsData.feedback?.overall?.averageRating || 0) ? "ph:star-fill" : "ph:star"}
+                    width={20}
+                    height={20}
+                    className={i < Math.floor(analyticsData.feedback?.overall?.averageRating || 0) ? "text-yellow-400" : "text-gray-300 dark:text-gray-600"}
+                  />
+                ))}
+              </div>
+              {/* Rating Breakdown */}
+              <div className="space-y-2">
+                {analyticsData.feedback?.overall?.ratingBreakdown && Object.entries(analyticsData.feedback.overall.ratingBreakdown).map(([rating, count]) => (
+                  <div key={rating} className="flex items-center">
+                    <span className="w-8 text-sm text-gray-600 dark:text-gray-400">{rating}★</span>
+                    <div className="flex-1 mx-2">
+                      <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                        <div 
+                          className="bg-yellow-500 h-2 rounded-full"
+                          style={{ width: `${(count / analyticsData.feedback.overall.totalReviews) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <span className="w-12 text-right text-sm font-medium text-gray-900 dark:text-white">{count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Recent Reviews */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4 text-dark dark:text-white">Recent Reviews</h3>
+              <div className="space-y-4 max-h-80 overflow-y-auto">
+                {analyticsData.feedback?.recentReviews?.slice(0, 5).map((review) => (
+                  <div key={review._id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h4 className="font-semibold text-dark dark:text-white">{review.guestName}</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{review.roomName}</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Icon
+                            key={i}
+                            icon={i < review.rating ? "ph:star-fill" : "ph:star"}
+                            width={14}
+                            height={14}
+                            className={i < review.rating ? "text-yellow-400" : "text-gray-300 dark:text-gray-600"}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">{review.comment}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))}
+                {(!analyticsData.feedback?.recentReviews || analyticsData.feedback.recentReviews.length === 0) && (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <Icon icon="ph:chat-circle-text" width={48} height={48} className="mx-auto mb-2 text-gray-400" />
+                    <p>No reviews yet</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Room Ratings Table */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4 text-dark dark:text-white">Room-Specific Ratings</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead>
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Overall Rating</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reviews</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cleanliness</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comfort</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {analyticsData.feedback?.roomRatings?.map((room) => (
+                    <tr key={room.roomId} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-dark dark:text-white">
+                        {room.roomName}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-dark dark:text-white">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">{room.averageRating.toFixed(1)}</span>
+                          <div className="flex items-center gap-1">
+                            {[...Array(5)].map((_, i) => (
+                              <Icon
+                                key={i}
+                                icon={i < Math.floor(room.averageRating) ? "ph:star-fill" : "ph:star"}
+                                width={12}
+                                height={12}
+                                className={i < Math.floor(room.averageRating) ? "text-yellow-400" : "text-gray-300 dark:text-gray-600"}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        {room.totalReviews}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-dark dark:text-white">
+                        <div className="flex items-center gap-2">
+                          <span>{room.cleanliness.toFixed(1)}</span>
+                          <div className="w-16 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                            <div 
+                              className="bg-green-500 h-2 rounded-full"
+                              style={{ width: `${(room.cleanliness / 5) * 100}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-dark dark:text-white">
+                        <div className="flex items-center gap-2">
+                          <span>{room.comfort.toFixed(1)}</span>
+                          <div className="w-16 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                            <div 
+                              className="bg-blue-500 h-2 rounded-full"
+                              style={{ width: `${(room.comfort / 5) * 100}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-dark dark:text-white">
+                        <div className="flex items-center gap-2">
+                          <span>{room.service.toFixed(1)}</span>
+                          <div className="w-16 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                            <div 
+                              className="bg-purple-500 h-2 rounded-full"
+                              style={{ width: `${(room.service / 5) * 100}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-dark dark:text-white">
+                        <div className="flex items-center gap-2">
+                          <span>{room.value.toFixed(1)}</span>
+                          <div className="w-16 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                            <div 
+                              className="bg-orange-500 h-2 rounded-full"
+                              style={{ width: `${(room.value / 5) * 100}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {(!analyticsData.feedback?.roomRatings || analyticsData.feedback.roomRatings.length === 0) && (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <Icon icon="ph:house" width={48} height={48} className="mx-auto mb-2 text-gray-400" />
+                  <p>No room ratings available</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Quick Actions */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           <h2 className="text-xl font-bold mb-4 text-dark dark:text-white">Quick Actions</h2>
@@ -720,5 +935,7 @@ export default function AnalyticsPage() {
         </div>
       </div>
     </section>
+    </>
+    </ProtectedRoute>
   );
 } 

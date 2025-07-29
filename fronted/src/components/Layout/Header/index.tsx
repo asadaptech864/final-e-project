@@ -301,10 +301,24 @@ const Header: React.FC = () => {
                            className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md transition-colors block"
                          >
                            <div className="flex items-center gap-2">
-                             <Icon icon="ph:user-edit" width={16} height={16} />
+                             <Icon icon="ph:user-circle" width={16} height={16} />
                              Edit Profile
                            </div>
                          </Link>
+                         
+                         {/* My Feedback - Only for guests */}
+                         {userRole === 'guest' && (
+                           <Link
+                             href="/my-feedback"
+                             onClick={() => setUserDropdownOpen(false)}
+                             className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md transition-colors block"
+                           >
+                             <div className="flex items-center gap-2">
+                               <Icon icon="ph:chat-circle-text" width={16} height={16} />
+                               My Feedback
+                             </div>
+                           </Link>
+                         )}
                          
                          <button
                            onClick={() => {

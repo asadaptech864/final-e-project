@@ -12,6 +12,8 @@ import { getUserNotifications, markNotificationRead, getUsersByRole, sendNotific
 import Notification from '../Modals/NotificationModal.mjs';
 import AnalyticsController from '../Controllers/AnalyticsController.mjs';
 import SettingsController from '../Controllers/SettingsController.mjs';
+import { submitFeedback, cleanupFeedbackDatabase, getRoomFeedback, checkFeedbackExists, getAllFeedback, getUserFeedback, deleteFeedback } from '../Controllers/FeedbackController.mjs';
+import { createContact, getAllContacts, sendAdminReply, getContactById, updateContactStatus } from '../Controllers/ContactController.mjs';
 const router = express.Router();
 
 // Register Stripe routes and webhook BEFORE any dynamic routes
@@ -58,6 +60,22 @@ router
 .patch('/maintenance/requests/:id/assign', MaintenanceController.assignMaintenanceRequest)
 .patch('/maintenance/requests/:id/status', MaintenanceController.updateMaintenanceStatus)
 .post('/maintenance/requests', MaintenanceController.createMaintenanceRequest);
+
+//Feedback routes
+router.post('/feedback', submitFeedback);
+router.get('/feedback/room/:roomId', getRoomFeedback);
+router.get('/feedback/check/:reservationId', checkFeedbackExists);
+router.get('/feedback/all', getAllFeedback);
+router.get('/feedback/user/:userId', getUserFeedback);
+router.delete('/feedback/:feedbackId', deleteFeedback);
+router.post('/feedback/cleanup', cleanupFeedbackDatabase);
+
+//Contact routes
+router.post('/contact', createContact);
+router.get('/contact/all', getAllContacts);
+router.get('/contact/:contactId', getContactById);
+router.post('/contact/:contactId/reply', sendAdminReply);
+router.patch('/contact/:contactId/status', updateContactStatus);
 
 // Reservation routes
 router.post('/reservations', createReservation);

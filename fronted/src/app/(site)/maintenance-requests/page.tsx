@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRole } from "@/hooks/useRole";
+import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 
 export default function MaintenanceRequestsTablePage() {
   const { data: session } = useSession();
@@ -66,6 +67,8 @@ export default function MaintenanceRequestsTablePage() {
   };
 
   return (
+    <ProtectedRoute allowedRoles={['guest', 'housekeeping', 'maintenance', 'admin', 'manager']}>
+    <>
     <section className="!pt-44 pb-20 min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto max-w-6xl px-5 2xl:px-0">
         <h1 className="text-3xl font-bold mb-8 text-dark dark:text-white text-center">Maintenance Requests</h1>
@@ -230,5 +233,7 @@ export default function MaintenanceRequestsTablePage() {
         )}
       </div>
     </section>
+    </>
+    </ProtectedRoute>
   );
 } 

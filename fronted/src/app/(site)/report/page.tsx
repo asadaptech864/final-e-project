@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRole } from "@/hooks/useRole";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
+import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 
 export default function ReportMaintenanceRequestPage() {
   const { data: session } = useSession();
@@ -25,7 +26,7 @@ export default function ReportMaintenanceRequestPage() {
 
   useEffect(() => {
     // For manager, fetch all rooms
-    if (userRole === "manager" || userRole === "housekeeping") {
+    if (userRole === "manager" || userRole === "housekeeping" || userRole === "admin") {
       fetch("http://localhost:3001/allrooms")
         .then(res => res.json())
         .then(data => setRooms(data.rooms || []));
@@ -78,11 +79,13 @@ export default function ReportMaintenanceRequestPage() {
   }
 
   return (
+    <ProtectedRoute allowedRoles={['guest', 'housekeeping', 'maintenance', 'admin', 'manager']}>
+      <>
     <section className="!pt-44 pb-20 min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto max-w-lg px-5 2xl:px-0">
         <h1 className="text-3xl font-bold mb-8 text-dark dark:text-white text-center">Report Maintenance Issue</h1>
         <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
-          {userRole === "manager" || userRole === "housekeeping" && (
+          {userRole === "manager" || userRole === "housekeeping" || userRole === "admin" && (
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">Room</label>
               <select
@@ -181,5 +184,7 @@ export default function ReportMaintenanceRequestPage() {
         </form>
       </div>
     </section>
+    </>
+    </ProtectedRoute>
   );
 } 

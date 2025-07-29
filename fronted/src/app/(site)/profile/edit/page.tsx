@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Icon } from '@iconify/react'
 import Image from 'next/image'
 import Link from 'next/link'
+import HeroSub from "@/components/shared/HeroSub";
 
 interface UserProfile {
   name: string
@@ -161,7 +162,13 @@ const EditProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-dark py-12">
+    <>
+    <HeroSub
+      title="Edit Profile"
+      description="Update your personal information"
+      badge="Profile"
+    />
+    <div className="min-h-screen bg-gray-50 dark:bg-dark py-8">
       <div className="container mx-auto max-w-2xl px-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
           {/* Header */}
@@ -315,7 +322,7 @@ const EditProfile = () => {
             <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Change Password</h3>
               <div className="space-y-4">
-                <div>
+                {/* <div>
                   <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Current Password
                   </label>
@@ -326,7 +333,7 @@ const EditProfile = () => {
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     placeholder="Enter current password"
                   />
-                </div>
+                </div> */}
                 <div>
                   <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     New Password
@@ -381,6 +388,7 @@ const EditProfile = () => {
         </div>
       </div>
     </div>
+    </>
   )
 }
 

@@ -1,12 +1,72 @@
+"use client"
 import { Icon } from '@iconify/react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Metadata } from "next";
-export const metadata: Metadata = {
-    title: "Contact Us | Homely",
-};
+import { useState } from 'react';
+import { useSession } from 'next-auth/react';
+import toast from 'react-hot-toast';
 
 export default function ContactUs() {
+  const { data: session } = useSession();
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    message: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.name || !formData.phone || !formData.email || !formData.message) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('http://localhost:3001/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          userId: session?.user?.id || null
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Message sent successfully! We will get back to you soon.');
+        setFormData({
+          name: '',
+          phone: '',
+          email: '',
+          message: ''
+        });
+      } else {
+        toast.error(data.message || 'Failed to send message');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Failed to send message. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className='container max-w-8xl mx-auto px-5 2xl:px-0 pt-32 md:pt-44 pb-14 md:pb-28'>
       <div className='mb-16'>
@@ -80,25 +140,29 @@ export default function ContactUs() {
             </div>
           </div>
           <div className='flex-1/2'>
-            <form>
+            <form onSubmit={handleSubmit}>
               <div className='flex flex-col gap-8'>
                 <div className='flex flex-col lg:flex-row gap-6'>
                   <input
                     type='text'
-                    name='username'
-                    id='username'
-                    autoComplete='username'
+                    name='name'
+                    id='name'
+                    autoComplete='name'
                     placeholder='Name*'
                     required
+                    value={formData.name}
+                    onChange={handleInputChange}
                     className='px-6 py-3.5 border border-black/10 dark:border-white/10 rounded-full outline-primary focus:outline w-full'
                   />
                   <input
-                    type='number'
-                    name='mobile'
-                    id='mobile'
-                    autoComplete='mobile'
+                    type='tel'
+                    name='phone'
+                    id='phone'
+                    autoComplete='tel'
                     placeholder='Phone number*'
                     required
+                    value={formData.phone}
+                    onChange={handleInputChange}
                     className='px-6 py-3.5 border border-black/10 dark:border-white/10 rounded-full outline-primary focus:outline w-full'
                   />
                 </div>
@@ -109,6 +173,8 @@ export default function ContactUs() {
                   autoComplete='email'
                   placeholder='Email address*'
                   required
+                  value={formData.email}
+                  onChange={handleInputChange}
                   className='px-6 py-3.5 border border-black/10 dark:border-white/10 rounded-full outline-primary focus:outline'
                 />
                 <textarea
@@ -118,9 +184,14 @@ export default function ContactUs() {
                   id='message'
                   placeholder='Write here your message'
                   required
+                  value={formData.message}
+                  onChange={handleInputChange}
                   className='px-6 py-3.5 border border-black/10 dark:border-white/10 rounded-2xl outline-primary focus:outline'></textarea>
-                <button className='px-8 py-4 rounded-full bg-primary text-white text-base font-semibold w-full mobile:w-fit hover:cursor-pointer hover:bg-dark duration-300'>
-                  Send message
+                <button 
+                  type='submit'
+                  disabled={isSubmitting}
+                  className='px-8 py-4 rounded-full bg-primary text-white text-base font-semibold w-full mobile:w-fit hover:cursor-pointer hover:bg-dark duration-300 disabled:opacity-50 disabled:cursor-not-allowed'>
+                  {isSubmitting ? 'Sending...' : 'Send message'}
                 </button>
               </div>
             </form>

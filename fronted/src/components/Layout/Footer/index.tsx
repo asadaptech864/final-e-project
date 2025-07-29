@@ -1,8 +1,14 @@
+"use client";
 import Link from "next/link";
 import { Icon } from "@iconify/react"
-import { FooterLinks } from "@/app/api/footerlinks";
+import { getFooterLinks } from "@/app/api/footerlinks";
+import { useSession } from "next-auth/react";
 
 const Footer = () => {
+  const { data: session } = useSession();
+  const userRole = session?.user?.role;
+  const footerLinks = getFooterLinks(userRole);
+
   return (
     <footer className="relative z-10 bg-dark">
       <div className="container mx-auto max-w-8xl pt-14 px-4 sm:px-6 lg:px-0">
@@ -47,7 +53,7 @@ const Footer = () => {
             </div>
             <div className="md:col-span-3 sm:col-span-6 col-span-12">
               <div className="flex flex-col gap-4 w-fit">
-                {FooterLinks.slice(0, 4).map((item, index) => (
+                {footerLinks.slice(0, Math.ceil(footerLinks.length / 2)).map((item, index) => (
                   <div key={index}>
                     <Link href={item.href} className="text-white/40 text-xm hover:text-white">
                       {item.label}
@@ -58,7 +64,7 @@ const Footer = () => {
             </div>
             <div className="md:col-span-2 sm:col-span-6 col-span-12">
               <div className="flex flex-col gap-4 w-fit">
-                {FooterLinks.slice(4, 8).map((item, index) => (
+                {footerLinks.slice(Math.ceil(footerLinks.length / 2)).map((item, index) => (
                   <div key={index}>
                     <Link href={item.href} className="text-white/40 text-xm hover:text-white">
                       {item.label}
