@@ -10,6 +10,7 @@ export const basicNavLinks: NavLinks[] = [
 // Guest specific links
 export const guestNavLinks: NavLinks[] = [
   { label: 'Home', href: '/' },
+  { label: 'About', href: '/about' },
   { label: 'Rooms', href: '/properties' },
   { label: 'Booking', href: '/properties/book' },
   { label: 'Reservations', href: '/reservation-table' },
@@ -38,26 +39,32 @@ export const managerNavLinks: NavLinks[] = [
   { label: 'Report Maintenance', href: '/report' },
   { label: 'Maintenances', href: '/maintenance-requests' },
   { label: 'Analytics', href: '/analytics' },
+  { label: 'Contact', href: '/contactus' },
 ]
 
 // Receptionist specific links
 export const receptionistNavLinks: NavLinks[] = [
   { label: 'Home', href: '/' },
+  { label: 'About', href: '/about' },
   { label: 'Booking', href: '/properties/book' },
   { label: 'Reservations', href: '/reservation-table' },
+  { label: 'Contact', href: '/contactus' },
 ]
 
 // housekeeping specific links
 export const housekeepingNavLinks: NavLinks[] = [
   { label: 'Home', href: '/' },
+  { label: 'About', href: '/about' },
   { label: 'Rooms', href: '/rooms-table' },
   { label: 'Report Maintenance', href: '/report' },
   { label: 'Maintenances', href: '/maintenance-requests' },
+  { label: 'Contact', href: '/contactus' },
 ]
 
 // maintenance specific links
 export const maintenanceNavLinks: NavLinks[] = [
   { label: 'Home', href: '/' },
+  { label: 'About', href: '/about' },
   { label: 'Maintenances', href: '/maintenance-requests' },
   { label: 'Contact', href: '/contactus' },
 ]
