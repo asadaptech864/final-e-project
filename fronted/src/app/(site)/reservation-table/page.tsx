@@ -257,7 +257,7 @@ export default function ReservationTablePage() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">{r.status}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      {/* Pending actions for guest and receptionist */}
+                      {/* Pending actions for guest, receptionist, admin, and manager */}
                       {r.status === 'Pending' && (
                         <>
                           {userRole === 'guest' && (
@@ -269,7 +269,7 @@ export default function ReservationTablePage() {
                               {actionLoading === r._id + '-pay' ? 'Redirecting...' : 'Pay Now'}
                             </button>
                           )}
-                          {(userRole === 'guest' || userRole === 'receptionist') && (
+                          {(userRole === 'guest' || userRole === 'receptionist' || userRole === 'admin' || userRole === 'manager') && (
                             <button
                               className="py-1 px-4 bg-red-600 text-white rounded-full text-sm font-semibold hover:bg-red-700 disabled:opacity-60"
                               onClick={() => handleCancel(r._id)}
@@ -280,38 +280,69 @@ export default function ReservationTablePage() {
                           )}
                         </>
                       )}
-                        {/* Guest actions: only Check In/Check Out */}
-                      {userRole === 'guest' && r.status === 'Confirmed' && (
-                        canShowCheckIn(r) ? (
-                          <button
-                            className="py-1 px-4 bg-green-600 text-white rounded-full text-sm font-semibold hover:bg-green-700 disabled:opacity-60"
-                            onClick={() => handleCheckIn(r._id)}
-                            disabled={actionLoading === r._id + '-checkin'}
-                          >
-                            {actionLoading === r._id + '-checkin' ? 'Checking In...' : 'Check In'}
-                          </button>
-                        ) : (
-                          <div className="text-red-500 font-semibold">Your check-in date is not today.</div>
-                        )
-                      )}
-                        {userRole === 'guest' && r.status === 'Checked In' && (
+                      
+                      {/* Confirmed reservations - only guest can check-in, staff can cancel */}
+                      {r.status === 'Confirmed' && (
                         <>
-                          <button
-                            className="py-1 px-4 bg-blue-600 text-white rounded-full text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 mr-2"
-                            onClick={() => handleCheckOut(r._id)}
-                            disabled={actionLoading === r.reservationId + '-checkout'}
-                          >
-                            {actionLoading === r._id + '-checkout' ? 'Checking Out...' : 'Check Out'}
-                          </button>
-                          <Link
-                            href={`/report?reservationId=${r.reservationId}`}
-                            className="py-1 px-4 bg-indigo-600 text-white rounded-full text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60"
-                          >
-                            Maintenance Request
-                          </Link>
+                          {/* Guest can check-in if it's their check-in date */}
+                          {userRole === 'guest' && (
+                            canShowCheckIn(r) ? (
+                              <button
+                                className="py-1 px-4 bg-green-600 text-white rounded-full text-sm font-semibold hover:bg-green-700 disabled:opacity-60"
+                                onClick={() => handleCheckIn(r._id)}
+                                disabled={actionLoading === r._id + '-checkin'}
+                              >
+                                {actionLoading === r._id + '-checkin' ? 'Checking In...' : 'Check In'}
+                              </button>
+                            ) : (
+                              <div className="text-red-500 font-semibold">Your check-in date is not today.</div>
+                            )
+                          )}
+                          
+                          {/* Staff can cancel confirmed reservations if guest doesn't come */}
+                          {(userRole === 'receptionist' || userRole === 'admin' || userRole === 'manager') && (
+                            <button
+                              className="py-1 px-4 bg-red-600 text-white rounded-full text-sm font-semibold hover:bg-red-700 disabled:opacity-60"
+                              onClick={() => handleCancel(r._id)}
+                              disabled={actionLoading === r._id + '-cancel'}
+                            >
+                              {actionLoading === r._id + '-cancel' ? 'Cancelling...' : 'Cancel (Guest No Come)'}
+                            </button>
+                          )}
                         </>
                       )}
-                      {(userRole === 'guest' || userRole === 'receptionist') && r.status === 'Checked Out' && (
+                      
+                      {/* Checked In reservations - only guest can check-out */}
+                      {r.status === 'Checked In' && (
+                        <>
+                          {/* Only guest can check-out */}
+                          {userRole === 'guest' && (
+                            <>
+                              <button
+                                className="py-1 px-4 bg-blue-600 text-white rounded-full text-sm font-semibold hover:bg-blue-700 disabled:opacity-60 mr-2"
+                                onClick={() => handleCheckOut(r._id)}
+                                disabled={actionLoading === r.reservationId + '-checkout'}
+                              >
+                                {actionLoading === r._id + '-checkout' ? 'Checking Out...' : 'Check Out'}
+                              </button>
+                              <Link
+                                href={`/report?reservationId=${r.reservationId}`}
+                                className="py-1 px-4 bg-indigo-600 text-white rounded-full text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60"
+                              >
+                                Maintenance Request
+                              </Link>
+                            </>
+                          )}
+                          
+                          {/* Staff can see status but cannot check-out */}
+                          {(userRole === 'receptionist' || userRole === 'admin' || userRole === 'manager') && (
+                            <span className="text-blue-700 font-semibold">Guest Checked In</span>
+                          )}
+                        </>
+                      )}
+                      
+                      {/* Completed reservations for guest, receptionist, admin, and manager */}
+                      {(userRole === 'guest' || userRole === 'receptionist' || userRole === 'admin' || userRole === 'manager') && r.status === 'Checked Out' && (
                         <>
                           <span className="text-green-700 font-semibold">Reservation Completed</span>
                           <Link
@@ -334,8 +365,9 @@ export default function ReservationTablePage() {
                           )}
                         </>
                       )}
-                      {/* Receptionist: show state message if no action */}
-                      {userRole === 'receptionist' && r.status !== 'Pending' && (
+                      
+                      {/* Status display for receptionist, admin, and manager */}
+                      {(userRole === 'receptionist' || userRole === 'admin' || userRole === 'manager') && r.status !== 'Pending' && r.status !== 'Confirmed' && r.status !== 'Checked In' && r.status !== 'Checked Out' && (
                         <span className={
                           r.status === 'Cancelled' ? 'text-red-700 font-semibold' :
                           r.status === 'Checked Out' ? 'text-green-700 font-semibold' :
@@ -348,9 +380,10 @@ export default function ReservationTablePage() {
                             ? 'Checked In'
                             : r.status === 'Confirmed'
                             ? 'Confirmed'
-                            : ''}
+                            : r.status}
                         </span>
                       )}
+                      
                       {userRole === 'guest' && r.status === 'Cancelled' && (
                         <span className="text-red-700 font-semibold">Reservation cancelled by {r.cancelledBy?.name || 'Unknown'} ({r.cancelledBy?.role || 'role'})</span>
                       )}

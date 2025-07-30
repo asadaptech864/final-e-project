@@ -15,6 +15,8 @@ export default function ContactUs() {
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -28,11 +30,14 @@ export default function ContactUs() {
     e.preventDefault();
     
     if (!formData.name || !formData.phone || !formData.email || !formData.message) {
+      setErrorMessage('Please fill in all fields');
       toast.error('Please fill in all fields');
       return;
     }
 
     setIsSubmitting(true);
+    setSuccessMessage('');
+    setErrorMessage('');
 
     try {
       const response = await fetch('http://localhost:3001/contact', {
@@ -49,6 +54,7 @@ export default function ContactUs() {
       const data = await response.json();
 
       if (response.ok) {
+        setSuccessMessage('Message sent successfully! We will get back to you soon.');
         toast.success('Message sent successfully! We will get back to you soon.');
         setFormData({
           name: '',
@@ -57,10 +63,12 @@ export default function ContactUs() {
           message: ''
         });
       } else {
+        setErrorMessage(data.message || 'Failed to send message');
         toast.error(data.message || 'Failed to send message');
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      setErrorMessage('Failed to send message. Please try again.');
       toast.error('Failed to send message. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -140,6 +148,29 @@ export default function ContactUs() {
             </div>
           </div>
           <div className='flex-1/2'>
+            {/* Success and Error Messages */}
+            {successMessage && (
+              <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  {successMessage}
+                </div>
+              </div>
+            )}
+            
+            {errorMessage && (
+              <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                <div className="flex items-center">
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errorMessage}
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit}>
               <div className='flex flex-col gap-8'>
                 <div className='flex flex-col lg:flex-row gap-6'>

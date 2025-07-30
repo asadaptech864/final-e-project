@@ -288,7 +288,7 @@ export default function AdminContactsPage() {
                       </p>
                     </div>
 
-                    {selectedContact.adminReply && (
+                    {selectedContact.adminReply && selectedContact.adminReply.message && (
                       <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
                         <h4 className="font-medium text-blue-900 dark:text-blue-300 mb-2">Admin Reply:</h4>
                         <p className="text-sm text-blue-800 dark:text-blue-200">

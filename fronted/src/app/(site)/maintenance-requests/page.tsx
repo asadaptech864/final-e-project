@@ -115,7 +115,8 @@ export default function MaintenanceRequestsTablePage() {
                     <td className="px-4 py-3 whitespace-nowrap">{new Date(req.createdAt).toLocaleString()}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{req.assignedTo?.name || "-"}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      {userRole === 'housekeeping' && !req.assignedTo && (
+                      {/* Assignment functionality for housekeeping, admin, and manager */}
+                      {(userRole === 'housekeeping' || userRole === 'admin' || userRole === 'manager') && !req.assignedTo && (
                         assigningId === req._id ? (
                           <div className="flex items-center gap-2">
                             <select
@@ -155,9 +156,16 @@ export default function MaintenanceRequestsTablePage() {
                           </button>
                         )
                       )}
-                      {userRole === 'housekeeping' && req.assignedTo && (
-                        <div>You are already assigned</div>
+                      
+                      {/* Show assignment status for housekeeping, admin, and manager */}
+                      {(userRole === 'housekeeping' || userRole === 'admin' || userRole === 'manager') && req.assignedTo && (
+                        <div className="text-sm">
+                          <div className="font-medium">Assigned to: {req.assignedTo?.name}</div>
+                          <div className="text-gray-600">Status: {req.status}</div>
+                        </div>
                       )}
+                      
+                      {/* Maintenance staff can update status */}
                       {userRole === 'maintenance' && !req.assignedTo && (
                         assigningId === req._id ? (
                           <div className="flex items-center gap-2">
@@ -198,6 +206,8 @@ export default function MaintenanceRequestsTablePage() {
                           </button>
                         )
                       )}
+                      
+                      {/* Status update for assigned maintenance staff */}
                       {userRole === 'maintenance' && req.assignedTo?._id === session?.user?.id && (
                         <select
                           value={req.status}
@@ -209,6 +219,8 @@ export default function MaintenanceRequestsTablePage() {
                           <option value="Resolved">Resolved</option>
                         </select>
                       )}
+                      
+                      {/* Guest view */}
                       {userRole === 'guest' && (
                         <div>
                           {req.assignedTo ? (
