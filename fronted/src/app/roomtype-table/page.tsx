@@ -4,6 +4,7 @@ import { useRoomTypes } from "@/hooks/useRoomTypes";
 import HeroSub from "@/components/shared/HeroSub";
 import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 import RoomTypeForm from "@/components/Properties/RoomTypeForm";
+import ConfirmationModal from "@/components/ui/confirmation-modal";
 
 const PAGE_SIZE = 5;
 
@@ -14,6 +15,8 @@ const RoomTypeTablePage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedRoomType, setSelectedRoomType] = useState<any>(null);
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [roomTypeToDelete, setRoomTypeToDelete] = useState<any>(null);
 
   // Filter room types by name
   const filteredRoomTypes = roomTypes.filter(type =>
@@ -37,15 +40,22 @@ const RoomTypeTablePage = () => {
     setShowEditModal(true);
   };
 
-  const handleDelete = async (roomTypeId: string) => {
-    if (window.confirm('Are you sure you want to delete this room type?')) {
-      setDeleteLoading(roomTypeId);
-      const result = await deleteRoomType(roomTypeId);
-      setDeleteLoading(null);
-      
-      if (!result.success) {
-        alert(`Failed to delete room type: ${result.error}`);
-      }
+  const handleDeleteClick = (roomType: any) => {
+    setRoomTypeToDelete(roomType);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!roomTypeToDelete) return;
+    
+    setDeleteLoading(roomTypeToDelete.slug);
+    const result = await deleteRoomType(roomTypeToDelete.slug);
+    setDeleteLoading(null);
+    setShowDeleteModal(false);
+    setRoomTypeToDelete(null);
+    
+    if (!result.success) {
+      alert(`Failed to delete room type: ${result.error}`);
     }
   };
 
@@ -110,7 +120,7 @@ const RoomTypeTablePage = () => {
                           Edit
                         </button>
                         <button
-                          onClick={() => handleDelete(type.slug)}
+                          onClick={() => handleDeleteClick(type)}
                           disabled={deleteLoading === type.slug}
                           className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 disabled:opacity-50"
                         >
@@ -170,6 +180,22 @@ const RoomTypeTablePage = () => {
             </div>
           </div>
         )}
+
+        {/* Delete Confirmation Modal */}
+        <ConfirmationModal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setRoomTypeToDelete(null);
+          }}
+          onConfirm={handleDeleteConfirm}
+          title="Delete Room Type"
+          message={`Are you sure you want to delete "${roomTypeToDelete?.name}"? This action cannot be undone.`}
+          confirmText="Delete Room Type"
+          cancelText="Cancel"
+          type="danger"
+          loading={deleteLoading === roomTypeToDelete?.slug}
+        />
       </>
     </ProtectedRoute>
   );

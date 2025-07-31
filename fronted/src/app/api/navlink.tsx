@@ -4,6 +4,7 @@ import { NavLinks } from '@/types/navlink'
 export const basicNavLinks: NavLinks[] = [
   { label: 'Home', href: '/' },
   { label: 'Rooms', href: '/properties' },
+  { label: 'About', href: '/about' },
   { label: 'Contact', href: '/contactus' },
 ]
 
@@ -22,13 +23,13 @@ export const adminNavLinks: NavLinks[] = [
   { label: 'Home', href: '/' },
   { label: 'Rooms', href: '/rooms-table' },
   { label: 'Room Types', href: '/roomtype-table' },
+  { label: 'Staffs', href: '/staff-table' },
   { label: 'Reservations', href: '/reservation-table' },
   { label: 'Report Maintenance', href: '/report' },
-  { label: 'Maintenances', href: '/maintenance-requests' },
-  { label: 'Staffs', href: '/staff-table' },  
+  { label: 'Maintenances', href: '/maintenance-requests' },  
   { label: 'Analytics', href: '/analytics' },
   { label: 'Settings', href: '/admin/settings' },
-  { label: 'Contacts', href: '/admin/contacts' },
+  { label: 'Contact Queries', href: '/admin/contacts' },
 ]
 //  Manager specific links
 export const managerNavLinks: NavLinks[] = [

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import HeroSub from "@/components/shared/HeroSub";
 import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 import { useRole } from "@/hooks/useRole";
+import ConfirmationModal from "@/components/ui/confirmation-modal";
 
 type User = {
   _id: string;
@@ -31,6 +32,11 @@ export default function StaffTablePage() {
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showActivateModal, setShowActivateModal] = useState(false);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -65,55 +71,88 @@ export default function StaffTablePage() {
   // Reset to page 1 if search changes
   useEffect(() => { setPage(1); }, [search]);
 
-  const handleDeactivate = async (id: string) => {
-    if (!window.confirm("Are you sure you want to deactivate this staff member?")) return;
+  const handleDeactivateClick = (user: User) => {
+    setSelectedUser(user);
+    setShowDeactivateModal(true);
+  };
+
+  const handleDeactivateConfirm = async () => {
+    if (!selectedUser) return;
+    
+    setActionLoading(selectedUser._id);
     try {
-      const res = await fetch(`http://localhost:3001/deactivate/${id}`, {
+      const res = await fetch(`http://localhost:3001/deactivate/${selectedUser._id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: false })
       });
       if (res.ok) {
-        setUsers(users => users.map(u => u._id === id ? { ...u, isActive: false } : u));
+        setUsers(users => users.map(u => u._id === selectedUser._id ? { ...u, isActive: false } : u));
       } else {
         alert("Failed to deactivate user");
       }
     } catch {
       alert("Error deactivating user");
+    } finally {
+      setActionLoading(null);
+      setShowDeactivateModal(false);
+      setSelectedUser(null);
     }
   };
 
-  const handleActivate = async (id: string) => {
-    if (!window.confirm("Are you sure you want to activate this staff member?")) return;
+  const handleActivateClick = (user: User) => {
+    setSelectedUser(user);
+    setShowActivateModal(true);
+  };
+
+  const handleActivateConfirm = async () => {
+    if (!selectedUser) return;
+    
+    setActionLoading(selectedUser._id);
     try {
-      const res = await fetch(`http://localhost:3001/activate/${id}`, {
+      const res = await fetch(`http://localhost:3001/activate/${selectedUser._id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: true })
       });
       if (res.ok) {
-        setUsers(users => users.map(u => u._id === id ? { ...u, isActive: true } : u));
+        setUsers(users => users.map(u => u._id === selectedUser._id ? { ...u, isActive: true } : u));
       } else {
         alert("Failed to activate user");
       }
     } catch {
       alert("Error activating user");
+    } finally {
+      setActionLoading(null);
+      setShowActivateModal(false);
+      setSelectedUser(null);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this staff member? This action cannot be undone.")) return;
+  const handleDeleteClick = (user: User) => {
+    setSelectedUser(user);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedUser) return;
+    
+    setActionLoading(selectedUser._id);
     try {
-      const res = await fetch(`http://localhost:3001/deleteuser/${id}`, {
+      const res = await fetch(`http://localhost:3001/deleteuser/${selectedUser._id}`, {
         method: 'DELETE',
       });
       if (res.ok) {
-        setUsers(users => users.filter(u => u._id !== id));
+        setUsers(users => users.filter(u => u._id !== selectedUser._id));
       } else {
         alert("Failed to delete user");
       }
     } catch {
       alert("Error deleting user");
+    } finally {
+      setActionLoading(null);
+      setShowDeleteModal(false);
+      setSelectedUser(null);
     }
   };
 
@@ -177,23 +216,26 @@ export default function StaffTablePage() {
                   {user.isActive ? (
                     <button
                       className="bg-red-500 text-white px-3 py-1 rounded hover:bg-white hover:text-red-600 border border-red-500 duration-300"
-                      onClick={() => handleDeactivate(user._id)}
+                      onClick={() => handleDeactivateClick(user)}
+                      disabled={actionLoading === user._id}
                     >
-                      Deactivate
+                      {actionLoading === user._id ? 'Deactivating...' : 'Deactivate'}
                     </button>
                   ) : (
                     <button
                       className="bg-green-600 text-white px-3 py-1 rounded hover:bg-white hover:text-green-600 border border-green-600 duration-300"
-                      onClick={() => handleActivate(user._id)}
+                      onClick={() => handleActivateClick(user)}
+                      disabled={actionLoading === user._id}
                     >
-                      Activate
+                      {actionLoading === user._id ? 'Activating...' : 'Activate'}
                     </button>
                   )}
                   <button
                     className="bg-gray-700 text-white px-3 py-1 rounded hover:bg-white hover:text-gray-700 border border-gray-700 duration-300"
-                    onClick={() => handleDelete(user._id)}
+                    onClick={() => handleDeleteClick(user)}
+                    disabled={actionLoading === user._id}
                   >
-                    Delete
+                    {actionLoading === user._id ? 'Deleting...' : 'Delete'}
                   </button>
                 </div>
               </td>
@@ -225,7 +267,55 @@ export default function StaffTablePage() {
           Next
         </button>
       </div>
-    </div>
+          </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setSelectedUser(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Staff Member"
+        message={`Are you sure you want to delete "${selectedUser?.name}"? This action cannot be undone.`}
+        confirmText="Delete Staff Member"
+        cancelText="Cancel"
+        type="danger"
+        loading={actionLoading === selectedUser?._id}
+      />
+
+      {/* Activate Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showActivateModal}
+        onClose={() => {
+          setShowActivateModal(false);
+          setSelectedUser(null);
+        }}
+        onConfirm={handleActivateConfirm}
+        title="Activate Staff Member"
+        message={`Are you sure you want to activate "${selectedUser?.name}"?`}
+        confirmText="Activate Staff Member"
+        cancelText="Cancel"
+        type="info"
+        loading={actionLoading === selectedUser?._id}
+      />
+
+      {/* Deactivate Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showDeactivateModal}
+        onClose={() => {
+          setShowDeactivateModal(false);
+          setSelectedUser(null);
+        }}
+        onConfirm={handleDeactivateConfirm}
+        title="Deactivate Staff Member"
+        message={`Are you sure you want to deactivate "${selectedUser?.name}"?`}
+        confirmText="Deactivate Staff Member"
+        cancelText="Cancel"
+        type="warning"
+        loading={actionLoading === selectedUser?._id}
+      />
     </>
     </ProtectedRoute>
   );
