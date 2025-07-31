@@ -11,12 +11,20 @@ const SocialSignIn = () => {
   };
   return (
     <>
+      <div className="text-center mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          Quick Sign In
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Sign in instantly with your social account
+        </p>
+      </div>
       <div className="flex gap-4">
         <button
           onClick={handleGoogleSignIn}
-          className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-black/10 dark:border-white/20 p-3.5 text-dark duration-200 ease-in dark:text-white dark:hover:bg-primary/10 hover:!bg-primary/10"
+          className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-black/10 dark:border-white/20 p-3.5 text-dark duration-200 ease-in dark:text-white dark:hover:bg-primary/10 hover:!bg-primary/10 hover:scale-105 transition-transform"
         >
-          Sign In
+          Continue with Google
           <svg
             width="23"
             height="22"
@@ -55,11 +63,12 @@ const SocialSignIn = () => {
           </svg>
         </button>
 
+        {/* GitHub button temporarily disabled
         <button
           onClick={handleGithubSignIn}
-          className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-black/10 dark:border-white/20 p-3.5 text-dark duration-200 ease-in dark:text-white dark:hover:bg-primary/10 hover:bg-primary/10"
+          className="flex w-full items-center justify-center gap-2.5 rounded-2xl border border-black/10 dark:border-white/20 p-3.5 text-dark duration-200 ease-in dark:text-white dark:hover:bg-primary/10 hover:bg-primary/10 hover:scale-105 transition-transform"
         >
-          Sign In
+          Continue with GitHub
           <svg
             width="22"
             height="22"
@@ -73,6 +82,7 @@ const SocialSignIn = () => {
             />
           </svg>
         </button>
+        */}
       </div>
     </>
   );

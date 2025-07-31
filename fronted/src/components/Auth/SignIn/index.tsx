@@ -116,7 +116,7 @@ const Signin = () => {
 
       <div className="text-center">
         <Link
-          href="/"
+          href="/forgot-password"
           className="mb-2 text-base text-dark hover:text-primary dark:text-white dark:hover:text-primary"
         >
           Forget Password?
@@ -124,7 +124,7 @@ const Signin = () => {
       </div>
       <p className="text-body-secondary text-base text-center">
         Not a member yet?{" "}
-        <Link href="/" className="text-primary hover:underline">
+        <Link href="/signup" className="text-primary hover:underline">
           Sign Up
         </Link>
       </p>

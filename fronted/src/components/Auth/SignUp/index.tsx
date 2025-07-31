@@ -37,6 +37,32 @@ const SignUp = () => {
     return null;
   }
 
+  // Password validation function
+  const validatePassword = (password: string) => {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    
+    if (password.length < minLength) {
+      return "Password must be at least 8 characters long";
+    }
+    if (!hasUpperCase) {
+      return "Password must contain at least one capital letter";
+    }
+    if (!hasLowerCase) {
+      return "Password must contain at least one lowercase letter";
+    }
+    if (!hasNumbers) {
+      return "Password must contain at least one number";
+    }
+    if (!hasSpecialChar) {
+      return "Password must contain at least one special character (!@#$%^&*(),.?\":{}|<>)";
+    }
+    return null; // Password is valid
+  };
+
   const addUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -44,30 +70,39 @@ const SignUp = () => {
     const name = (document.getElementById('name') as HTMLInputElement)?.value;
     const email = (document.getElementById('email') as HTMLInputElement)?.value;
     const password = (document.getElementById('password') as HTMLInputElement)?.value;
+    
     if (name === "" || email === "" || password === "") {
       setError("Please Fill All Fields");
       setLoading(false);
-    } else {
-      try {
-        const response = await axios.post('http://localhost:3001/signup/adduser', {
-          name,
-          email,
-          password
-        });
-        // Automatically log in the user after signup
-        const loginResult = await signIn("credentials", {
-          redirect: true,
-          email,
-          password,
-          callbackUrl: "/"
-        });
-        setLoading(false);
-      } catch (error: any) {
-        setLoading(false);
-        const msg = error?.response?.data?.message || "Failed To Add User";
-        setError(msg);
-      }
-      // setLoading(false);
+      return;
+    }
+
+    // Validate password
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await axios.post('http://localhost:3001/signup/adduser', {
+        name,
+        email,
+        password
+      });
+      // Automatically log in the user after signup
+      const loginResult = await signIn("credentials", {
+        redirect: true,
+        email,
+        password,
+        callbackUrl: "/"
+      });
+      setLoading(false);
+    } catch (error: any) {
+      setLoading(false);
+      const msg = error?.response?.data?.message || "Failed To Add User";
+      setError(msg);
     }
   };
   
@@ -118,6 +153,16 @@ const SignUp = () => {
             required
             className="w-full rounded-md border border-black/10 dark:border-white/20 border-solid bg-transparent px-5 py-3 text-base text-dark outline-none transition placeholder:text-gray-300 focus:border-primary focus-visible:shadow-none dark:text-white dark:focus:border-primary"
           />
+          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            <p className="mb-1">Password must contain:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>At least 8 characters</li>
+              <li>One capital letter (A-Z)</li>
+              <li>One lowercase letter (a-z)</li>
+              <li>One number (0-9)</li>
+              <li>One special character (!@#$%^&*(),.?&quot;:{}|&lt;&gt;)</li>
+            </ul>
+          </div>
         </div>
         <div className="mb-9">
           <button
@@ -144,7 +189,7 @@ const SignUp = () => {
       <p className="text-center text-base">
         Already have an account?
         <Link
-          href="/"
+          href="/signin"
           className="pl-2 text-primary hover:bg-darkprimary hover:underline"
         >
           Sign In

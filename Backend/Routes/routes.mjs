@@ -55,6 +55,12 @@ router
 .put("/users/:id", UserController.updateUserProfile)
 .get("/users/:id", UserController.getUserById)
 .get('/maintenance/users', UserController.getAllMaintenanceUsers)
+// Forgot password routes
+.post("/auth/forgot-password", UserController.forgotPassword)
+.post("/auth/validate-reset-token", UserController.validateResetToken)
+.post("/auth/reset-password", UserController.resetPassword)
+// Google signup route
+.post("/auth/google-signup", UserController.googleSignup)
 //maintenance routes
 .get("/allRequestedMaintenance/all", MaintenanceController.getAllMaintenanceRequests)
 .patch('/maintenance/requests/:id/assign', MaintenanceController.assignMaintenanceRequest)

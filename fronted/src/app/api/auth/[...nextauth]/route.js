@@ -6,6 +6,35 @@ import GitHubProvider from 'next-auth/providers/github';
 const handler = NextAuth({
   site: process.env.NEXTAUTH_URL || 'http://localhost:3000',
   callbacks: {
+    async signIn({ user, account, profile }) {
+      // Handle Google signup
+      if (account?.provider === 'google') {
+        try {
+          const axios = (await import('axios')).default;
+          const response = await axios.post('http://localhost:3001/auth/google-signup', {
+            name: user.name,
+            email: user.email,
+            picture: user.image
+          });
+          
+          if (response.status === 200 || response.status === 201) {
+            // Update user object with backend data
+            user.id = response.data.user._id;
+            user.role = response.data.user.role;
+            user.phone = response.data.user.phone;
+            user.address = response.data.user.address;
+            user.gender = response.data.user.gender;
+            user.createdAt = response.data.user.createdAt;
+            user.profilePic = response.data.user.profilePic;
+            return true;
+          }
+        } catch (error) {
+          console.error('Google signup error:', error);
+          return false;
+        }
+      }
+      return true;
+    },
     async jwt({ token, user, trigger, session }) {
       // Add user id to token when user signs in
       if (user) {
@@ -47,10 +76,10 @@ const handler = NextAuth({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
-    GitHubProvider({
-      clientId: process.env.GITHUB_ID,
-      clientSecret: process.env.GITHUB_SECRET,
-    }),
+    // GitHubProvider({
+    //   clientId: process.env.GITHUB_ID,
+    //   clientSecret: process.env.GITHUB_SECRET,
+    // }),
     CredentialsProvider({
       name: 'credentials',
       credentials: {

@@ -5,12 +5,20 @@ import { signIn } from "next-auth/react";
 const SocialSignUp = () => {
     return (
         <>
+            <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    Quick Sign Up
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Sign up instantly with your social account
+                </p>
+            </div>
             <div className="flex gap-4">
                 <button
                     onClick={() => signIn("google")}
-                    className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-border dark:border-darkborder p-3.5 text-dark duration-200 ease-in  dark:border-darkborder dark:text-white dark:hover:bg-primary/10 hover:bg-primary/10"
+                    className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-border dark:border-darkborder p-3.5 text-dark duration-200 ease-in  dark:border-darkborder dark:text-white dark:hover:bg-primary/10 hover:bg-primary/10 hover:scale-105 transition-transform"
                 >
-                    Sign Up
+                    Continue with Google
                     <svg
                         width="23"
                         height="22"
@@ -49,11 +57,12 @@ const SocialSignUp = () => {
                     </svg>
                 </button>
 
+                {/* GitHub button temporarily disabled
                 <button
                     onClick={() => signIn("github")}
-                    className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-border dark:border-darkborder p-3.5 text-dark duration-200 ease-in  dark:border-darkborder dark:text-white dark:hover:bg-primary/10 hover:bg-primary/10"
+                    className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-border dark:border-darkborder p-3.5 text-dark duration-200 ease-in  dark:border-darkborder dark:text-white dark:hover:bg-primary/10 hover:bg-primary/10 hover:scale-105 transition-transform"
                 >
-                    Sign Up
+                    Continue with GitHub
                     <svg
                         width="22"
                         height="22"
@@ -67,6 +76,7 @@ const SocialSignUp = () => {
                         />
                     </svg>
                 </button>
+                */}
             </div>
         </>
     );

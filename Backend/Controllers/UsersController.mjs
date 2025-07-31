@@ -324,5 +324,243 @@ export const sendNotificationToUser = async (req, res) => {
   }
 };
   
-    const UserController = {addUser, LoginUser, auth, getAllUsers, deleteuser, deactivateAndActivateUser, editUser, getUserById, getAllMaintenanceUsers, updateUserProfile};
-    export default UserController;
+// Forgot Password functionality
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    // Find user by email
+    const user = await Users.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found with this email address' });
+    }
+
+    // Generate reset token
+    const crypto = await import('crypto');
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    
+    // Set token expiry (1 hour from now)
+    const resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000);
+
+    // Save token to user
+    user.resetPasswordToken = resetPasswordToken;
+    user.resetPasswordExpires = resetPasswordExpires;
+    await user.save();
+
+    // Create reset URL
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+
+    // Email content
+    const html = `
+      <div style="font-family:Arial,sans-serif;padding:32px;background:#f7f7fa;border-radius:12px;max-width:520px;margin:auto;box-shadow:0 2px 8px #0001;">
+        <h2 style="color:#07be8a;text-align:center;margin-bottom:24px;">Password Reset Request</h2>
+        <p style="font-size:16px;color:#222;margin-bottom:16px;">Dear <b>${user.name}</b>,</p>
+        <div style="background:#fff;border-radius:8px;padding:20px 24px;margin-bottom:20px;border:1px solid #eee;">
+          <p style="font-size:15px;color:#333;line-height:1.6;">You requested a password reset for your account. Click the button below to reset your password:</p>
+          <div style="text-align:center;margin:24px 0;">
+            <a href="${resetUrl}" style="background:#07be8a;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:bold;display:inline-block;">Reset Password</a>
+          </div>
+          <p style="font-size:14px;color:#666;margin-top:16px;">If you didn't request this password reset, please ignore this email.</p>
+          <p style="font-size:14px;color:#666;">This link will expire in 1 hour.</p>
+        </div>
+        <p style="font-size:14px;color:#555;text-align:center;margin-top:24px;">If the button doesn't work, copy and paste this link into your browser:</p>
+        <p style="font-size:12px;color:#888;text-align:center;word-break:break-all;">${resetUrl}</p>
+        <hr style="margin:24px 0;"/>
+        <p style="font-size:12px;color:#888;text-align:center;">&copy; ${new Date().getFullYear()} Hotel Management System</p>
+      </div>
+    `;
+
+    // Send email
+    await EmailController.sendMail(user.email, 'Password Reset Request - Hotel Management', html);
+
+    res.status(200).json({ 
+      message: 'Password reset email sent successfully',
+      message: 'If an account with that email exists, a password reset link has been sent.'
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Error sending password reset email' });
+  }
+};
+
+const validateResetToken = async (req, res) => {
+  try {
+    const { token } = req.body;
+    
+    if (!token) {
+      return res.status(400).json({ message: 'Token is required' });
+    }
+
+    // Hash the token to compare with stored hash
+    const crypto = await import('crypto');
+    const resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user with this token and check if it's not expired
+    const user = await Users.findOne({
+      resetPasswordToken,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    res.status(200).json({ message: 'Token is valid' });
+  } catch (error) {
+    console.error('Token validation error:', error);
+    res.status(500).json({ message: 'Error validating reset token' });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    
+    if (!token || !password) {
+      return res.status(400).json({ message: 'Token and password are required' });
+    }
+
+    // Hash the token to compare with stored hash
+    const crypto = await import('crypto');
+    const resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user with this token and check if it's not expired
+    const user = await Users.findOne({
+      resetPasswordToken,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    // Hash the new password
+    const bcrypt = await import('bcrypt');
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Update user password and clear reset token
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    // Send confirmation email
+    const html = `
+      <div style="font-family:Arial,sans-serif;padding:32px;background:#f7f7fa;border-radius:12px;max-width:520px;margin:auto;box-shadow:0 2px 8px #0001;">
+        <h2 style="color:#07be8a;text-align:center;margin-bottom:24px;">Password Reset Successful</h2>
+        <p style="font-size:16px;color:#222;margin-bottom:16px;">Dear <b>${user.name}</b>,</p>
+        <div style="background:#fff;border-radius:8px;padding:20px 24px;margin-bottom:20px;border:1px solid #eee;">
+          <p style="font-size:15px;color:#333;line-height:1.6;">Your password has been successfully reset. You can now sign in to your account with your new password.</p>
+          <div style="text-align:center;margin:24px 0;">
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/signin" style="background:#07be8a;color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:bold;display:inline-block;">Sign In</a>
+          </div>
+          <p style="font-size:14px;color:#666;margin-top:16px;">If you didn't request this password reset, please contact our support team immediately.</p>
+        </div>
+        <hr style="margin:24px 0;"/>
+        <p style="font-size:12px;color:#888;text-align:center;">&copy; ${new Date().getFullYear()} Hotel Management System</p>
+      </div>
+    `;
+
+    await EmailController.sendMail(user.email, 'Password Reset Successful - Hotel Management', html);
+
+    res.status(200).json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Error resetting password' });
+  }
+};
+
+// Google Signup functionality
+const googleSignup = async (req, res) => {
+  try {
+    console.log('Google signup request received:', req.body);
+    const { name, email, picture } = req.body;
+    
+    if (!name || !email) {
+      console.log('Missing required fields:', { name, email });
+      return res.status(400).json({ message: 'Name and email are required' });
+    }
+
+    // Check if user already exists
+    let user = await Users.findOne({ email });
+    console.log('Existing user check:', user ? 'User exists' : 'User not found');
+    
+    if (user) {
+      // User exists, return success with user data
+      console.log('Returning existing user data');
+      return res.status(200).json({
+        message: 'User already exists',
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          profilePic: user.profilePic || picture,
+          isActive: user.isActive
+        }
+      });
+    }
+
+    // Create new user with Google data
+    console.log('Creating new user with Google data');
+    const newUser = new Users({
+      name,
+      email,
+      password: '', // No password for Google users
+      provider: 'google', // Set provider to google
+      role: 'guest', // Default role for Google signups
+      profilePic: picture,
+      isActive: true
+    });
+
+    await newUser.save();
+    console.log('New user saved successfully:', newUser._id);
+
+    // Send welcome email (optional - don't fail if email fails)
+    try {
+      const html = `
+        <div style="font-family:Arial,sans-serif;padding:32px;background:#f7f7fa;border-radius:12px;max-width:520px;margin:auto;box-shadow:0 2px 8px #0001;">
+          <h2 style="color:#07be8a;text-align:center;margin-bottom:24px;">Welcome to Our Hotel!</h2>
+          <p style="font-size:16px;color:#222;margin-bottom:16px;">Dear <b>${name}</b>,</p>
+          <div style="background:#fff;border-radius:8px;padding:20px 24px;margin-bottom:20px;border:1px solid #eee;">
+            <p style="font-size:15px;color:#333;line-height:1.6;">Thank you for signing up with Google! Your account has been successfully created.</p>
+            <p style="font-size:15px;color:#333;line-height:1.6;">You can now book rooms and manage your reservations through our platform.</p>
+          </div>
+          <p style="font-size:14px;color:#555;text-align:center;margin-top:24px;">We look forward to serving you!</p>
+          <hr style="margin:24px 0;"/>
+          <p style="font-size:12px;color:#888;text-align:center;">&copy; ${new Date().getFullYear()} Hotel Management System</p>
+        </div>
+      `;
+      
+      await EmailController.sendMail(email, 'Welcome to Our Hotel - Google Signup', html);
+      console.log('Welcome email sent successfully');
+    } catch (emailError) {
+      console.log('Welcome email error (non-critical):', emailError);
+    }
+
+    console.log('Sending success response');
+    res.status(201).json({
+      message: 'User created successfully with Google',
+      user: {
+        _id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        profilePic: newUser.profilePic,
+        isActive: newUser.isActive
+      }
+    });
+  } catch (error) {
+    console.error('Google signup error:', error);
+    res.status(500).json({ message: 'Error creating user with Google', error: error.message });
+  }
+};
+
+const UserController = {addUser, LoginUser, auth, getAllUsers, deleteuser, deactivateAndActivateUser, editUser, getUserById, getAllMaintenanceUsers, updateUserProfile, forgotPassword, validateResetToken, resetPassword, googleSignup};
+export default UserController;

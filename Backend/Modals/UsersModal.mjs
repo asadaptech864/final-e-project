@@ -14,7 +14,15 @@ const UserSchema = new Schema({
   },
   password: {
     type: String,
-    required: true
+    required: function() {
+      // Password is required for regular signup, but not for Google OAuth users
+      return this.provider !== 'google';
+    }
+  },
+  provider: {
+    type: String,
+    enum: ['local', 'google', 'github'],
+    default: 'local'
   },
   role: {
     type: String,
@@ -52,6 +60,14 @@ const UserSchema = new Schema({
   otpExpiresAt: {
     type: Date,
     default: null 
+  },
+  resetPasswordToken: {
+    type: String,
+    default: null
+  },
+  resetPasswordExpires: {
+    type: Date,
+    default: null
   }
 
 });
