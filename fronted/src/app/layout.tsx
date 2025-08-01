@@ -23,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='en'>
-      <body className={`${font.className} bg-white dark:bg-black antialiased`}>
+      <body className={`${font.className} bg-white dark:bg-black antialiased`} suppressHydrationWarning={true}>
         <NextTopLoader color="#07be8a" />
         <SessionProviderComp session={session}>
           <ThemeProvider
